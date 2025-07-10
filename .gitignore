@@ -1,0 +1,9 @@
+
+/api/dist
+/api/node_modules
+/client/dist
+/client/node_modules
+
+/api/.env
+/client/.env
+/api/.env.local
