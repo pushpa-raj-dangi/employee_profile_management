@@ -7,3 +7,4 @@
 /api/.env
 /client/.env
 /api/.env.local
+/node_modules
