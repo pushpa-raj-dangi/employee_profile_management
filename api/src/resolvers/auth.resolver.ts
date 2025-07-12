@@ -1,14 +1,22 @@
-import { Arg, Ctx, Mutation, Resolver } from "type-graphql";
-import { InvitationInput, ProfileInput, RegisterInput } from "../inputs";
+import { Arg, Ctx, Mutation, Query, Resolver } from "type-graphql";
+import {  RegisterInput } from "../inputs";
 import { prisma } from "../prisma";
 import { AuthService } from "../services/auth.service";
 import { Inject, Service } from "typedi";
 import { CustomContext } from "../types";
 import { LoginResponse } from "../entities/Auth.entity";
+import { ProfileInput } from "../inputs/profile.input";
+import { InvitationInput } from "../inputs/invitation.input";
 
 @Service()
 @Resolver()
 export class AuthResolver {
+
+  @Query(() => String)
+  healthCheck(): string {
+    return "API is working!";
+  }
+
   constructor(
     @Inject(() => AuthService) private readonly authService: AuthService
   ) {}

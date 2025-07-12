@@ -1,27 +1,62 @@
-import express from "express";
 import { ApolloServer } from "apollo-server-express";
-import { buildSchema } from "type-graphql";
 import cors from "cors";
+import express from "express";
+import { buildSchema } from "type-graphql";
+import { AuthResolver } from "./resolvers/auth.resolver";
+import { customAuthChecker } from "./utils/auth/authChecker";
+import { createContext } from "./utils/context";
+import { formatError } from "./utils/errorFormatter";
+import { ExceptionFilter } from "./utils/exceptionFilter";
+import { graphqlRateLimiter } from "./utils/rateLimiter";
+import Container from "typedi";
+import session from "express-session";
+import redisClient from "./utils/redisClient";
+import connectRedis from "connect-redis";
 
+const RedisStore = connectRedis(session);
 
 async function startServer() {
   const app = express();
 
   app.use(
+  session({
+    store: new RedisStore({ client: redisClient }),
+    secret: process.env.SESSION_SECRET!||'asfkjsdfjweoirjiworjlkwejrewrweriwer',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: false,
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      sameSite: 'lax',
+    },
+  })
+);
+  app.use(
     cors({
-      origin: true,
+      origin: "http://localhost:4200",
       credentials: true,
     })
   );
 
+  app.use("/graphql", graphqlRateLimiter);
+
   app.get("/health", (req, res) => {
-    res.json({ status: "ok" });
+  res.json({ status: "ok" });
   });
 
-  const schema = await buildSchema({} as any);
+  const schema = await buildSchema({
+    resolvers: [ AuthResolver],
+    validate: false,
+    globalMiddlewares: [ExceptionFilter],
+    container: Container,
+    authChecker: customAuthChecker,
+  });
 
   const server = new ApolloServer({
     schema,
+    context: createContext,
+    formatError,
     introspection: true,
     persistedQueries: false,
   });
@@ -31,6 +66,9 @@ async function startServer() {
   server.applyMiddleware({
     app,
     cors: false,
+    bodyParserConfig: {
+      limit: "50mb",
+    },
     path: "/graphql",
   });
 
