@@ -1,0 +1,31 @@
+import { gql } from '@apollo/client';
+
+export const GET_COMPANIES_MINIMAL = gql`
+  query GetCompaniesMinimal {
+    companies {
+      id
+      name
+    }
+  }
+`;
+
+
+export const GET_COMPANIES_FULL = gql`
+  query GetCompaniesFull {
+    companies {
+      id
+      name
+      zipCode
+      address
+      phoneNumber
+      email
+      website
+      establishmentDate
+      remarks
+      images
+     
+      createdAt
+      updatedAt
+    }
+  }
+`;
