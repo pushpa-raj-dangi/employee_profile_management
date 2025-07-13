@@ -6,10 +6,10 @@ import {
   Paper,
   Typography
 } from "@mui/material";
-import { useAuth } from "../auth/AuthProvider";
 import DashboardStat from "../components/DashboardStat";
 import QuickActions from "../components/QuickActions";
 import { Role } from "../utils/permissions";
+import { useAuth } from "../hooks/useAuth";
 
 const Dashboard = () => {
   const { user } = useAuth();

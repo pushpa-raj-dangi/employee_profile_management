@@ -1,6 +1,6 @@
 import { Divider, Stack, Typography } from "@mui/material";
-import { useAuth } from "../auth/AuthProvider";
 import { AccountPopoverFooter, SignOutButton } from "@toolpad/core/Account";
+import { useAuth } from "../hooks/useAuth";
 
 export function SidebarFooterAccountPopover() {
   const { user } = useAuth();

@@ -31,8 +31,6 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: "/",
-
     element: <AuthLayout />,
     children: [
       {
@@ -54,9 +52,7 @@ const router = createBrowserRouter([
       {
         path: "admin",
         element: (
-          <ProtectedRoute
-            roles={[Role.SYSTEM_ADMIN]}
-          >
+          <ProtectedRoute roles={[Role.SYSTEM_ADMIN]}>
             <Admin />
           </ProtectedRoute>
         ),
@@ -64,9 +60,7 @@ const router = createBrowserRouter([
       {
         path: "companies",
         element: (
-          <ProtectedRoute
-          roles={[Role.SYSTEM_ADMIN, Role.MANAGER]}
-          >
+          <ProtectedRoute roles={[Role.SYSTEM_ADMIN, Role.MANAGER]}>
             <Company />
           </ProtectedRoute>
         ),
@@ -74,9 +68,7 @@ const router = createBrowserRouter([
       {
         path: "invitations",
         element: (
-          <ProtectedRoute
-          roles={[Role.SYSTEM_ADMIN, Role.MANAGER]}
-         >
+          <ProtectedRoute roles={[Role.SYSTEM_ADMIN, Role.MANAGER]}>
             <Invitation />
           </ProtectedRoute>
         ),
@@ -90,16 +82,17 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path:"companies/:companyId",
-        element: (<ProtectedRoute>
-          <CompanyDetails />
-        </ProtectedRoute>)
+        path: "companies/:companyId",
+        element: (
+          <ProtectedRoute>
+            <CompanyDetails />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "*",
         element: <Dashboard />,
       },
-
     ],
   },
 ]);

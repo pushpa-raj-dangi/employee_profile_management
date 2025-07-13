@@ -15,7 +15,6 @@ import { DashboardLayout } from "@toolpad/core/DashboardLayout";
 import { DemoProvider } from "@toolpad/core/internal";
 import React, { useEffect, useMemo } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { useAuth } from "../auth/AuthProvider";
 import { useRouterAdapter } from "../routes/useRouterAdapter";
 import { SidebarFooterAccount } from "./SidebarFooterAccount";
 import { ManageAccounts } from "@mui/icons-material";
@@ -24,6 +23,7 @@ import type {
   CustomNavigation,
   RoleBasedNavItem,
 } from "../types/CustomNavigation";
+import { useAuth } from "../hooks/useAuth";
 
 const NAVIGATION: CustomNavigation = [
   { kind: "header", title: "Main Menu" },

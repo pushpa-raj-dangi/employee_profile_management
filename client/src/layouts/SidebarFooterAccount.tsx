@@ -1,9 +1,9 @@
 import type { SidebarFooterProps } from "@toolpad/core/DashboardLayout";
-import { useAuth } from "../auth/AuthProvider";
 import { createPreviewComponent } from "./createPreviewComponent";
 import { SidebarFooterAccountPopover } from "./SidebarFooterAccountPopover";
 import { useMemo } from "react";
 import { Account } from "@toolpad/core/Account";
+import { useAuth } from "../hooks/useAuth";
 
 export function SidebarFooterAccount({ mini }: SidebarFooterProps) {
   const { user } = useAuth();

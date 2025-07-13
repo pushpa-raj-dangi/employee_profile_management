@@ -1,7 +1,7 @@
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "./AuthProvider";
 import { CircularProgress, Box } from "@mui/material";
 import type { JSX } from "react";
+import { useAuth } from "../hooks/useAuth";
 
 export const ProtectedRoute = ({
   children,

@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, type FormEvent } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -9,13 +9,13 @@ import {
   Paper,
   Alert,
   CircularProgress,
-} from '@mui/material';
-import { useAuth } from '../auth/AuthProvider';
+} from "@mui/material";
+import { useAuth } from "../hooks/useAuth";
 
 export const LoginForm = () => {
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
   const { login, error, loading } = useAuth();
   const navigate = useNavigate();
@@ -25,7 +25,7 @@ export const LoginForm = () => {
     e.preventDefault();
     try {
       await login(formData.email, formData.password);
-      const to = location.state?.from?.pathname || '/dashboard';
+      const to = location.state?.from?.pathname || "/dashboard";
       navigate(to, { replace: true });
     } catch (error) {
       console.error("Login failed:", error);
@@ -38,15 +38,12 @@ export const LoginForm = () => {
         <Typography variant="h5" component="h1" align="center" gutterBottom>
           Sign In
         </Typography>
-        <Typography
-        color='#71717a'
-        align='center' 
-        >
+        <Typography color="#71717a" align="center">
           Enter your credentials to access the employee management system
         </Typography>
-        
+
         {error && (
-          <Alert severity="error" sx={{ mb: 3 ,mt: 2}}>
+          <Alert severity="error" sx={{ mb: 3, mt: 2 }}>
             {error.message}
           </Alert>
         )}
@@ -62,10 +59,12 @@ export const LoginForm = () => {
             autoComplete="email"
             autoFocus
             value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, email: e.target.value })
+            }
             disabled={loading}
           />
-          
+
           <TextField
             margin="normal"
             required
@@ -75,10 +74,12 @@ export const LoginForm = () => {
             type="password"
             autoComplete="current-password"
             value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, password: e.target.value })
+            }
             disabled={loading}
           />
-          
+
           <Button
             type="submit"
             fullWidth
@@ -89,7 +90,7 @@ export const LoginForm = () => {
             {loading ? (
               <CircularProgress size={24} color="inherit" />
             ) : (
-              'Sign In'
+              "Sign In"
             )}
           </Button>
         </Box>

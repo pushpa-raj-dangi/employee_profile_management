@@ -1,7 +1,7 @@
 
 import type { JSX } from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "./AuthProvider";
+import { useAuth } from "../hooks/useAuth";
 
 export const GuestRoute = ({ children }: { children: JSX.Element }) => {
   const { isAuthenticated } = useAuth();

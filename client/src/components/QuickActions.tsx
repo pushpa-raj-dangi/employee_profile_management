@@ -15,8 +15,8 @@ import {
   Paper,
   Typography,
 } from "@mui/material";
-import { useAuth } from "../auth/AuthProvider";
 import { hasPermission, RolePermissions } from "../utils/permissions";
+import { useAuth } from "../hooks/useAuth";
 
 const QuickActions = () => {
   const { user } = useAuth();
