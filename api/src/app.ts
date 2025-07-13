@@ -3,6 +3,9 @@ import cors from "cors";
 import express from "express";
 import { buildSchema } from "type-graphql";
 import { AuthResolver } from "./resolvers/auth.resolver";
+import { CompanyResolver } from "./resolvers/company.resolver";
+import { DashboardResolver } from "./resolvers/dashboard.resolver";
+import { UserResolver } from "./resolvers/user.resolver";
 import { customAuthChecker } from "./utils/auth/authChecker";
 import { createContext } from "./utils/context";
 import { formatError } from "./utils/errorFormatter";
@@ -34,7 +37,7 @@ async function startServer() {
 );
   app.use(
     cors({
-      origin: "http://localhost:4200",
+      origin: ["http://localhost:4200", "https://studio.apollographql.com"],
       credentials: true,
     })
   );
@@ -42,11 +45,11 @@ async function startServer() {
   app.use("/graphql", graphqlRateLimiter);
 
   app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
+    res.json({ status: "ok" });
   });
 
   const schema = await buildSchema({
-    resolvers: [ AuthResolver],
+    resolvers: [UserResolver, CompanyResolver, AuthResolver, DashboardResolver],
     validate: false,
     globalMiddlewares: [ExceptionFilter],
     container: Container,

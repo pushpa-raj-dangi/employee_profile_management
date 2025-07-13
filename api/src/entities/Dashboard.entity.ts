@@ -13,4 +13,21 @@ export class DashboardStats {
 
   @Field(() => Int)
   activeUsers!: number;
+
 }
+
+
+@ObjectType()
+export class AdminDashboardStats {
+  @Field(() => Int)
+  systemAdmins!: number;
+
+  @Field(() => Int)
+  users!: number;
+
+  @Field(() => Int)
+  companies!: number;
+
+}
+
+

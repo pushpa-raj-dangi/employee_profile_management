@@ -1,5 +1,5 @@
 import { InputType, Field } from 'type-graphql';
-import { Role } from '../entities/User.entity';
+import { Role } from '../entities/user.entity';
 
 @InputType()
 export class InvitationInput {

@@ -1,5 +1,5 @@
 import { ObjectType, Field, ID } from 'type-graphql';
-import { User } from './User.entity';
+import { User } from './user.entity';
 
 @ObjectType()
 export class Company {
@@ -34,7 +34,7 @@ export class Company {
   images!: string[];
 
   @Field(() => [User], { nullable: true })
-  users!: User[];
+  users?: User[];
 
   @Field()
   createdAt!: Date;

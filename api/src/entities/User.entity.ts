@@ -1,7 +1,7 @@
 import { ObjectType, Field, ID, registerEnumType } from 'type-graphql';
-import { Company } from './Company.entity';
-import { Profile } from './Profile.entity';
-import { Invitation } from './Invitation.entity';
+import { Company } from './company.entity';
+import { Profile } from './profile.entity';
+import { Invitation } from './invitation.entity';
 
 export enum Role {
   SYSTEM_ADMIN = 'SYSTEM_ADMIN',
@@ -45,4 +45,9 @@ export class User {
 
   @Field()
   updatedAt!: Date;
+
+  @Field()
+  isActive: boolean = true;
 }
+
+

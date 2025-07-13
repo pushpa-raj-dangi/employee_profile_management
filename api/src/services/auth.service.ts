@@ -1,4 +1,4 @@
-import { prisma } from "../prisma";
+import { prisma } from "../config/prisma";
 import { Role } from "../entities";
 import { ValidationError } from "../errors";
 import { hashPassword, verifyPassword } from "../utils/auth/auth";
@@ -10,9 +10,9 @@ import { Service } from "typedi";
 @Service()
 export class AuthService {
   async login(email: string, password: string) {
-    console.log("AuthService login called with email:", email);
+    
     const user = await prisma.user.findUnique({ where: { email } });
-    console.log("User found in AuthService login:", user);
+
     if (!user) throw new ValidationError("Invalid email or password");
 
     const valid = await verifyPassword(password, user.password);
@@ -85,7 +85,6 @@ export class AuthService {
       include: { profile: true,  companies: { include: { company: true } } },
     });
 
-    console.log("User found:", user);
     if (!user) return null;
 
     return user;

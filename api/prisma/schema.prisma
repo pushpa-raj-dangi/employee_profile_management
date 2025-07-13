@@ -7,6 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+generator seed {
+  provider = "ts-node"
+}
+
 enum Role {
   SYSTEM_ADMIN
   MANAGER

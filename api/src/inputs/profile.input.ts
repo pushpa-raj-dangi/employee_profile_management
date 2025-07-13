@@ -1,3 +1,4 @@
+import { Length } from 'class-validator';
 import { InputType, Field } from 'type-graphql';
 
 @InputType()
@@ -9,12 +10,15 @@ export class ProfileInput {
   department!: string;
 
   @Field()
+  @Length(3,100)
   firstName!: string;
 
   @Field()
+  @Length(3,100)
   lastName!: string;
 
   @Field()
+  @Length(4,4)
   zipCode!: string;
 
   @Field()

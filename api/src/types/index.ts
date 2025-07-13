@@ -1,4 +1,4 @@
-import { Role } from '../entities/User.entity';
+import { Role } from '../entities/user.entity';
 import { Request, Response } from 'express';
 
 export interface CustomContext {

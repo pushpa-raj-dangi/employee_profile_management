@@ -1,7 +1,10 @@
-import { compare, hash } from "bcrypt";
+import { sign, verify } from "jsonwebtoken";
+import { hash, compare } from "bcrypt";
+import { prisma } from "../../config/prisma";
+import { Role } from "../../entities";
 import crypto from "crypto";
-import { prisma } from "../../prisma";
 
+const JWT_SECRET = process.env.JWT_SECRET || "SECRET_KEY";
 const SALT_ROUNDS = 10;
 
 export function generateToken() {
@@ -16,7 +19,13 @@ export async function verifyPassword(password: string, hash: string) {
   return compare(password, hash);
 }
 
+export function createJWT(user: { id: string; email: string; role: Role }) {
+  return sign(user, JWT_SECRET, { expiresIn: "1d" });
+}
 
+export function verifyJWT(token: string) {
+  return verify(token, JWT_SECRET);
+}
 
 export async function authenticateUser(email: string, password: string) {
   const user = await prisma.user.findUnique({ where: { email } });

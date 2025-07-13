@@ -1,6 +1,6 @@
 import { ObjectType, Field, ID, registerEnumType } from 'type-graphql';
-import { Role, User } from './User.entity';
-import { Company } from './Company.entity';
+import { Role, User } from './user.entity';
+import { Company } from './company.entity';
 
 export enum InvitationStatus {
   PENDING = 'PENDING',

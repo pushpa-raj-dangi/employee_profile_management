@@ -1,10 +1,10 @@
 import { MiddlewareFn } from "type-graphql";
-import { Context } from "../types";
 import { AuthenticationError, ValidationError } from "../errors";
 import { Prisma } from "@prisma/client";
 import { GraphQLError } from "graphql/error/GraphQLError";
+import { CustomContext } from "../types";
 
-export const ExceptionFilter: MiddlewareFn<Context> = async (
+export const ExceptionFilter: MiddlewareFn<CustomContext> = async (
   { context, info },
   next
 ) => {
