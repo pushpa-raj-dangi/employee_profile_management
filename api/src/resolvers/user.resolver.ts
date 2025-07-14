@@ -46,10 +46,7 @@ export class UserResolver {
     @Ctx() ctx: CustomContext,
     @Arg("input") input: ProfileInput
   ) {
-    if (!ctx.req.session?.id) {
-      throw new Error("Authentication required");
-    }
-    return await this.userService.updateProfile(ctx.req.session.id, input);
+    return await this.userService.updateProfile(ctx.req.session.userId, input);
   }
 
   @Authorized([Role.SYSTEM_ADMIN, Role.MANAGER])
@@ -90,5 +87,17 @@ export class UserResolver {
     );
   }
 
+
+  @Query(() => ProfileInput, { nullable: true })
+  @Authorized([Role.SYSTEM_ADMIN, Role.MANAGER])
+  async getEmployeeById(
+    @Ctx() ctx: CustomContext,
+    @Arg("employeeId") employeeId: string
+  ): Promise<ProfileInput | null> {
+    return await this.userService.getEmployeeById(
+      ctx.req.session.userId,
+      employeeId
+    );
+  }
 
 }

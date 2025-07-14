@@ -4,6 +4,9 @@ import { InputType, Field } from 'type-graphql';
 @InputType()
 export class ProfileInput {
   @Field()
+  id!: string;
+  
+  @Field()
   employeeNumber!: string;
 
   @Field()
@@ -28,11 +31,14 @@ export class ProfileInput {
   phoneNumber!: string;
 
   @Field()
-  birthday!: Date;
+  birthday!: Date 
 
   @Field({ nullable: true })
   remarks?: string;
 
   @Field({ nullable: true })
   profileImage?: string;
+
+  @Field({ nullable: true })
+  userId?: string;
 }

@@ -16,7 +16,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@prisma/client": "^6.11.1",
     "apollo-server-express": "^3.13.0",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
@@ -39,6 +38,7 @@
     "typedi": "^0.10.0"
   },
   "devDependencies": {
+    "@prisma/client": "^6.11.1",
     "@types/bcrypt": "^5.0.2",
     "@types/connect-redis": "^0.0.23",
     "@types/express-session": "^1.18.2",

@@ -7,10 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-generator seed {
-  provider = "ts-node"
-}
-
 enum Role {
   SYSTEM_ADMIN
   MANAGER
@@ -48,7 +44,7 @@ model Profile {
   phoneNumber    String   @db.VarChar(255)
   birthday       DateTime
   remarks        String?  @db.Text
-  profileImage   String?  @db.VarChar(255)
+  profileImage   String?  @db.Text
   user           User     @relation(fields: [userId], references: [id])
   userId         String   @unique
   createdAt      DateTime @default(now())
@@ -57,14 +53,14 @@ model Profile {
 
 model Company {
   id                String        @id @default(uuid())
-  name              String       @unique @db.VarChar(255)
-  zipCode           String       @db.VarChar(10)
-  address           String       @db.VarChar(255)
-  phoneNumber       String       @db.VarChar(255)
-  email             String       @db.VarChar(255)
-  website           String?     @db.VarChar(255)
+  name              String        @unique @db.VarChar(255)
+  zipCode           String        @db.VarChar(10)
+  address           String        @db.VarChar(255)
+  phoneNumber       String        @db.VarChar(255)
+  email             String        @db.VarChar(255)
+  website           String?       @db.VarChar(255)
   establishmentDate DateTime
-  remarks           String?     @db.Text
+  remarks           String?       @db.Text
   images            String[]
   users             CompanyUser[]
   createdAt         DateTime      @default(now())
@@ -85,7 +81,7 @@ model CompanyUser {
 
 model Invitation {
   id            String           @id @default(uuid())
-  email         String          @db.VarChar(255)
+  email         String           @db.VarChar(255)
   token         String           @unique
   role          Role
   status        InvitationStatus @default(PENDING)
@@ -98,5 +94,5 @@ model Invitation {
   companyId     String
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
-  tempPassword  String           @db.VarChar(255) @default("")
+  tempPassword  String           @default("") @db.VarChar(255)
 }

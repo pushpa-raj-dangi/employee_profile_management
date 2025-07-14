@@ -40,32 +40,57 @@ export class UserService {
     });
   }
 
-  async updateProfile(userId: string, input: ProfileInput) {
-    return await prisma.$transaction(async (prisma) => {
-      if (!userId) {
-        throw new AuthenticationError("User ID is required");
-      }
+ async updateProfile(userId: string, input: ProfileInput) {
+  return await prisma.$transaction(async (prisma) => {
+    if (!userId) {
+      throw new AuthenticationError("User ID is required");
+    }
 
-      if (!input.firstName || !input.lastName) {
-        throw new ValidationError("First name and last name are required");
-      }
+    if (!input.firstName || !input.lastName) {
+      throw new ValidationError("First name and last name are required");
+    }
 
-      const user = await prisma.user.findUnique({ where: { id: userId } });
-      if (!user) {
-        throw new NotFoundError("User not found");
-      }
-
-      const profile = await prisma.profile.findUnique({ where: { userId } });
-
-      return prisma.user.update({
-        where: { id: userId },
-        data: {
-          profile: profile ? { update: input } : { create: input },
-        },
-        include: { profile: true },
-      });
+    // Fetch current logged-in user
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { profile: true, companies: true },
     });
-  }
+
+    if (!currentUser) {
+      throw new NotFoundError("Current user not found");
+    }
+
+    // Fetch the target profile's user (the one to be updated)
+    const targetUser = await prisma.user.findUnique({
+      where: { id: input.userId },
+    });
+
+    if (!targetUser) {
+      throw new NotFoundError("Target user not found");
+    }
+
+    // Authorization logic
+    if (currentUser.role === "GENERAL_EMPLOYEE" && userId !== input.userId) {
+      throw new ForbiddenError("General employees can only update their own profile.");
+    }
+
+    if (currentUser.role === "MANAGER" && currentUser.companies.every(c => !c.companyId)) {
+      throw new ForbiddenError("Managers can only update profiles within their own company.");
+    }
+
+    // Find or create profile
+    const profile = await prisma.profile.findUnique({ where: { userId: input.userId } });
+
+    return prisma.user.update({
+      where: { id: input.userId },
+      data: {
+        profile: profile ? { update: input } : { create: input },
+      },
+      include: { profile: true },
+    });
+  });
+}
+
 
   async sendInvitation(
     invitedById: string,
@@ -151,39 +176,6 @@ export class UserService {
       return invitation;
     });
   }
-
-  // async listEmployees(
-  //   userId: string,
-  //   userRole: GraphQLRole
-  // ): Promise<GraphQLUser[]> {
-  //   if (!userId) throw new AuthenticationError("User ID is required");
-
-  //   let prismaUsers: PrismaUserWithProfile[] = [];
-
-  //   if (userRole === GraphQLRole.SYSTEM_ADMIN) {
-  //     prismaUsers = await prisma.user.findMany({ include: { profile: true, companies: true } });
-  //   } else {
-  //     const companyUsers = await prisma.companyUser.findMany({
-  //       where: { userId },
-  //       select: { companyId: true },
-  //     });
-
-  //     const companyIds = companyUsers.map((cu) => cu.companyId);
-
-  //     if (!companyIds.length) return [];
-
-  //     prismaUsers = await prisma.user.findMany({
-  //       where: {
-  //         companies: {
-  //           some: { companyId: { in: companyIds } },
-  //         },
-  //       },
-  //       include: { profile: true },
-  //     });
-  //   }
-
-  //   return prismaUsers.map(mapPrismaUserToGraphQLUser);
-  // }
 
   async listEmployees(
     userId: string,
@@ -281,5 +273,64 @@ export class UserService {
     }));
 
     return { data, totalCount };
+  }
+
+  async getEmployeeById(userId: string, employeeId: string): Promise<ProfileInput> {
+    if (!userId) throw new AuthenticationError("User ID is required");
+
+    const employee = await prisma.companyUser.findUnique({
+      where: {
+        companyId_userId: {
+          companyId: employeeId, 
+          userId: userId,
+        },
+      },
+      select: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            profile: {
+              select: {
+                firstName: true,
+                lastName: true,
+                address: true,
+                birthday: true,
+                phoneNumber: true,
+                createdAt: true,
+                updatedAt: true,
+                profileImage: true,
+                department: true,
+                employeeNumber: true,
+                id  : true,
+                remarks: true,
+                zipCode: true,
+              },
+            },
+          },
+        },
+        company: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!employee) throw new NotFoundError("Employee not found");
+
+    return {
+      id: employee.user.id,
+      address: employee.user.profile?.address || "",
+      firstName: employee.user.profile?.firstName || "",
+      lastName: employee.user.profile?.lastName || "",
+      birthday: employee.user.profile?.birthday as Date,
+      phoneNumber: employee.user.profile?.phoneNumber || "",
+      profileImage: employee.user.profile?.profileImage || "",
+      department: employee.user.profile?.department || "",
+      employeeNumber: employee.user.profile?.employeeNumber || "",
+      remarks: employee.user.profile?.remarks || "",
+      zipCode: employee.user.profile?.zipCode || "",
+    };
   }
 }
