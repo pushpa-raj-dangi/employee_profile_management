@@ -15,6 +15,7 @@ import Container from "typedi";
 import session from "express-session";
 import redisClient from "./utils/redisClient";
 import connectRedis from "connect-redis";
+import { sendEmail } from "./utils/email";
 
 const RedisStore = connectRedis(session);
 
@@ -41,6 +42,15 @@ async function startServer() {
       credentials: true,
     })
   );
+
+  app.get("/", (req, res) => {
+    sendEmail({
+      to: "larazza@linkjetdata.com",
+      subject: "Welcome to the API server",
+      text: "Hello! Thank you for joining our API service."
+    });
+    res.send("Welcome to the API server!");
+  });
 
   app.use("/graphql", graphqlRateLimiter);
 

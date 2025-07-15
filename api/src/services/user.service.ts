@@ -11,6 +11,7 @@ import { RegisterInput } from "../inputs/register.input";
 import { SendInvitationInput } from "../inputs/send-invitation.input";
 import { generateToken, hashPassword } from "../utils/auth/auth";
 import { sendEmail } from "../utils/email";
+import { ProfileObject } from "../entities/objects/ProfileObject";
 
 @Service()
 export class UserService {
@@ -40,57 +41,65 @@ export class UserService {
     });
   }
 
- async updateProfile(userId: string, input: ProfileInput) {
-  return await prisma.$transaction(async (prisma) => {
-    if (!userId) {
-      throw new AuthenticationError("User ID is required");
-    }
+  async updateProfile(userId: string, input: ProfileInput) {
+    return await prisma.$transaction(async (prisma) => {
+      if (!userId) {
+        throw new AuthenticationError("User ID is required");
+      }
 
-    if (!input.firstName || !input.lastName) {
-      throw new ValidationError("First name and last name are required");
-    }
+      if (!input.firstName || !input.lastName) {
+        throw new ValidationError("First name and last name are required");
+      }
 
-    // Fetch current logged-in user
-    const currentUser = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { profile: true, companies: true },
+      // Fetch current logged-in user
+      const currentUser = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { profile: true, companies: true },
+      });
+
+      if (!currentUser) {
+        throw new NotFoundError("Current user not found");
+      }
+
+      // Fetch the target profile's user (the one to be updated)
+      const targetUser = await prisma.user.findUnique({
+        where: { id: input.userId },
+      });
+
+      if (!targetUser) {
+        throw new NotFoundError("Target user not found");
+      }
+
+      // Authorization logic
+      if (currentUser.role === "GENERAL_EMPLOYEE" && userId !== input.userId) {
+        throw new ForbiddenError(
+          "General employees can only update their own profile."
+        );
+      }
+
+      if (
+        currentUser.role === "MANAGER" &&
+        currentUser.companies.every((c) => !c.companyId)
+      ) {
+        throw new ForbiddenError(
+          "Managers can only update profiles within their own company."
+        );
+      }
+
+      // Find or create profile
+      const profile = await prisma.profile.findUnique({
+        where: { userId: input.userId },
+      });
+
+      return prisma.user.update({
+        where: { id: input.userId },
+        data: {
+          profile: profile ? { update: input } : { create: input },
+        },
+        include: { profile: true },
+      });
     });
-
-    if (!currentUser) {
-      throw new NotFoundError("Current user not found");
-    }
-
-    // Fetch the target profile's user (the one to be updated)
-    const targetUser = await prisma.user.findUnique({
-      where: { id: input.userId },
-    });
-
-    if (!targetUser) {
-      throw new NotFoundError("Target user not found");
-    }
-
-    // Authorization logic
-    if (currentUser.role === "GENERAL_EMPLOYEE" && userId !== input.userId) {
-      throw new ForbiddenError("General employees can only update their own profile.");
-    }
-
-    if (currentUser.role === "MANAGER" && currentUser.companies.every(c => !c.companyId)) {
-      throw new ForbiddenError("Managers can only update profiles within their own company.");
-    }
-
-    // Find or create profile
-    const profile = await prisma.profile.findUnique({ where: { userId: input.userId } });
-
-    return prisma.user.update({
-      where: { id: input.userId },
-      data: {
-        profile: profile ? { update: input } : { create: input },
-      },
-      include: { profile: true },
-    });
-  });
-}
-
+  }
 
   async sendInvitation(
     invitedById: string,
@@ -275,13 +284,16 @@ export class UserService {
     return { data, totalCount };
   }
 
-  async getEmployeeById(userId: string, employeeId: string): Promise<ProfileInput> {
+  async getEmployeeById(
+    userId: string,
+    employeeId: string
+  ): Promise<ProfileObject> {
     if (!userId) throw new AuthenticationError("User ID is required");
 
     const employee = await prisma.companyUser.findUnique({
       where: {
         companyId_userId: {
-          companyId: employeeId, 
+          companyId: employeeId,
           userId: userId,
         },
       },
@@ -302,7 +314,7 @@ export class UserService {
                 profileImage: true,
                 department: true,
                 employeeNumber: true,
-                id  : true,
+                id: true,
                 remarks: true,
                 zipCode: true,
               },

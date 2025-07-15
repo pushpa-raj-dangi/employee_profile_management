@@ -18,6 +18,7 @@ import { AuthenticationError } from "apollo-server-express";
 import { CustomContext } from "../types";
 import { EmployeeDTO } from "../entities/DTOS/employees/employeeDto";
 import { PaginatedEmployees } from "../entities/paginatedEmployee.entity";
+import { ProfileObject } from "../entities/objects/ProfileObject";
 
 @Service()
 @Resolver(() => User)
@@ -88,12 +89,12 @@ export class UserResolver {
   }
 
 
-  @Query(() => ProfileInput, { nullable: true })
+  @Query(() => ProfileObject, { nullable: true })
   @Authorized([Role.SYSTEM_ADMIN, Role.MANAGER])
   async getEmployeeById(
     @Ctx() ctx: CustomContext,
     @Arg("employeeId") employeeId: string
-  ): Promise<ProfileInput | null> {
+  ): Promise<ProfileObject | null> {
     return await this.userService.getEmployeeById(
       ctx.req.session.userId,
       employeeId

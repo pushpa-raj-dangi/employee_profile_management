@@ -1,10 +1,12 @@
 import 'reflect-metadata';
 import startServer from './app';
 import { prisma } from "./config/prisma";
+import dotnenv from 'dotenv';
 
 const PORT = process.env.PORT || 4000;
 
 startServer().then((app) => {
+  dotnenv.config();
   const server = app.listen(PORT, () => {
     console.log(`🚀 Server running at http://localhost:${PORT}/graphql`);
   });
