@@ -1,18 +1,18 @@
 import { Resolver, Query, Mutation, Arg, Authorized, Ctx } from "type-graphql";
 import { Invitation, InvitationStatus } from "../entities/invitation.entity";
 import { prisma } from "../config/prisma";
-import { Context } from "../types";
 import { Role, User } from "../entities/user.entity";
 import { RegisterInput } from "../inputs/register.input";
 import { ProfileInput } from "../inputs/profile.input";
 import { hash } from "bcrypt";
+import { CustomContext } from "../types";
 
 @Resolver(Invitation)
 export class InvitationResolver {
   @Authorized([Role.SYSTEM_ADMIN, Role.MANAGER])
   @Query(() => [Invitation])
-  async listInvitations(@Ctx() ctx: Context) {
-    if (ctx.user.role === Role.SYSTEM_ADMIN) {
+  async listInvitations(@Ctx() ctx: CustomContext) {
+    if (ctx.req.session.role === Role.SYSTEM_ADMIN) {
       return prisma.invitation.findMany({
         include: {
           invitedBy: true,
@@ -23,7 +23,7 @@ export class InvitationResolver {
     } else {
       // For managers, only show invitations they sent to their companies
       const companyUsers = await prisma.companyUser.findMany({
-        where: { userId: ctx.user.id },
+        where: { userId: ctx.req.session.userId },
         select: { companyId: true },
       });
 
@@ -31,7 +31,7 @@ export class InvitationResolver {
 
       return prisma.invitation.findMany({
         where: {
-          invitedById: ctx.user.id,
+          invitedById: ctx.req.session.userId,
           companyId: { in: companyIds },
         },
         include: {
@@ -106,7 +106,7 @@ export class InvitationResolver {
 
   @Authorized([Role.SYSTEM_ADMIN, Role.MANAGER])
   @Mutation(() => Invitation)
-  async cancelInvitation(@Ctx() ctx: Context, @Arg("id") id: string) {
+  async cancelInvitation(@Ctx() ctx: CustomContext, @Arg("id") id: string) {
     const invitation = await prisma.invitation.findUnique({
       where: { id },
     });
@@ -117,8 +117,8 @@ export class InvitationResolver {
 
     // Verify permission
     if (
-      ctx.user.role === Role.MANAGER &&
-      invitation.invitedById !== ctx.user.id
+      ctx.req.session.role === Role.MANAGER &&
+      invitation.invitedById !== ctx.req.session.userId
     ) {
       throw new Error("You can only cancel invitations you sent");
     }

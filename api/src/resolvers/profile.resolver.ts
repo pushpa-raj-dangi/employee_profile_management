@@ -2,15 +2,15 @@ import { Resolver, Mutation, Arg, Query, Authorized, Ctx } from "type-graphql";
 import { ProfileInput } from "../inputs/profile.input";
 import { prisma } from "../config/prisma";
 import { Profile } from "../entities/profile.entity";
-import { Context } from "../types";
 import { Role } from "../entities";
+import { CustomContext } from "../types";
 
 @Resolver(Profile)
 export class ProfileResolver {
   @Authorized()
   @Mutation(() => Profile)
   async updateProfile(
-    @Ctx() ctx: Context,
+    @Ctx() ctx: CustomContext,
     @Arg("input") input: ProfileInput,
     @Arg("userId", { nullable: true }) userId?: string
   ) {
@@ -18,16 +18,16 @@ export class ProfileResolver {
     // Managers can update profiles in their company
     // Regular users can only update their own profile
 
-    const targetUserId = userId || ctx.user.id;
+    const targetUserId = userId || ctx.req.session.userId;
 
     if (
-      ctx.user.role === Role.GENERAL_EMPLOYEE &&
-      targetUserId !== ctx.user.id
+      ctx.req.session.role === Role.GENERAL_EMPLOYEE &&
+      targetUserId !== ctx.req.session.userId
     ) {
       throw new Error("You can only update your own profile");
     }
 
-    if (ctx.user.role === Role.MANAGER && targetUserId !== ctx.user.id) {
+    if (ctx.req.session.role === Role.MANAGER && targetUserId !== ctx.req.session.userId) {
       // Verify the target user is in the same company
       const targetUserCompanies = await prisma.companyUser.findMany({
         where: { userId: targetUserId },
@@ -35,12 +35,12 @@ export class ProfileResolver {
       });
 
       const managerCompanies = await prisma.companyUser.findMany({
-        where: { userId: ctx.user.id },
+        where: { userId: ctx.req.session.userId },
         select: { companyId: true },
       });
 
-      const hasCommonCompany = targetUserCompanies.some((tc) =>
-        managerCompanies.some((mc) => mc.companyId === tc.companyId)
+      const hasCommonCompany = targetUserCompanies.some((tc:any) =>
+        managerCompanies.some((mc:any) => mc.companyId === tc.companyId)
       );
 
       if (!hasCommonCompany) {
@@ -51,9 +51,14 @@ export class ProfileResolver {
     return prisma.profile.upsert({
       where: { userId: targetUserId },
       update: input,
+      // create: {
+      //   ...input,
+      //   user: { connect: { id: targetUserId } },
+      //   userId: targetUserId,
+      // },
       create: {
         ...input,
-        user: { connect: { id: targetUserId } },
+        userId: targetUserId,
       },
     });
   }
@@ -61,20 +66,20 @@ export class ProfileResolver {
   @Authorized()
   @Query(() => Profile, { nullable: true })
   async getProfile(
-    @Ctx() ctx: Context,
+    @Ctx() ctx: CustomContext,
     @Arg("userId", { nullable: true }) userId?: string
   ) {
-    const targetUserId = userId || ctx.user.id;
+    const targetUserId = userId || ctx.req.session.userId;
 
     // Authorization checks similar to updateProfile
     if (
-      ctx.user.role === Role.GENERAL_EMPLOYEE &&
-      targetUserId !== ctx.user.id
+      ctx.req.session.role === Role.GENERAL_EMPLOYEE &&
+      targetUserId !== ctx.req.session.userId
     ) {
       throw new Error("You can only view your own profile");
     }
 
-    if (ctx.user.role === Role.MANAGER && targetUserId !== ctx.user.id) {
+    if (ctx.req.session.role === Role.MANAGER && targetUserId !== ctx.req.session.userId) {
       // Verify same company
       const targetUserCompanies = await prisma.companyUser.findMany({
         where: { userId: targetUserId },
@@ -82,12 +87,12 @@ export class ProfileResolver {
       });
 
       const managerCompanies = await prisma.companyUser.findMany({
-        where: { userId: ctx.user.id },
+        where: { userId: ctx.req.session.userId },
         select: { companyId: true },
       });
 
-      const hasCommonCompany = targetUserCompanies.some((tc) =>
-        managerCompanies.some((mc) => mc.companyId === tc.companyId)
+      const hasCommonCompany = targetUserCompanies.some((tc:any) =>
+        managerCompanies.some((mc:any) => mc.companyId === tc.companyId)
       );
 
       if (!hasCommonCompany) {

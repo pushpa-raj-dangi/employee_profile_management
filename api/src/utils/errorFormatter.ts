@@ -1,5 +1,5 @@
-import { ApolloError } from "apollo-server-express";
-import { AuthenticationError, ValidationError, NotFoundError, ForbiddenError } from "../errors";
+import { ApolloError, ForbiddenError } from "apollo-server-express";
+import { AuthenticationError, ValidationError, NotFoundError } from "../errors";
 
 export function formatError(error: any) {
   const { originalError } = error;

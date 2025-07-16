@@ -1,27 +1,38 @@
-export class AuthenticationError extends Error {
-  constructor(message: string) {
+export class CustomError extends Error {
+  code: string;
+  statusCode: number;
+  
+  constructor(message: string, code: string, statusCode: number = 500) {
     super(message);
-    this.name = "AuthenticationError";
+    this.name = this.constructor.name;
+    this.code = code;
+    this.statusCode = statusCode;
+    Error.captureStackTrace(this, this.constructor);
   }
 }
 
-export class ValidationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "ValidationError";
+export class ValidationError extends CustomError {
+  constructor(message: string, field?: string) {
+    super(message, 'VALIDATION_ERROR', 400);
+    this.field = field;
+  }
+  field?: string;
+}
+
+export class AuthenticationError extends CustomError {
+  constructor(message: string = 'Authentication required') {
+    super(message, 'UNAUTHENTICATED', 401);
   }
 }
 
-export class NotFoundError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "NotFoundError";
+export class AuthorizationError extends CustomError {
+  constructor(message: string = 'Insufficient permissions') {
+    super(message, 'FORBIDDEN', 403);
   }
 }
 
-export class ForbiddenError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "ForbiddenError";
+export class NotFoundError extends CustomError {
+  constructor(message: string = 'Resource not found') {
+    super(message, 'NOT_FOUND', 404);
   }
 }

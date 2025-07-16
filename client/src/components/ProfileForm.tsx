@@ -21,7 +21,7 @@ import {
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { CloudUpload } from "@mui/icons-material";
-import { profileSchema, type ProfileFormData } from "../schema";
+import { profileSchema, type ProfileFormData } from "../schemas/schema";
 import { useAuth } from "../hooks/useAuth";
 import { UPDATE_PROFILE_MUTATION } from "../graphql/mutations/userMutations";
 import { useNavigate } from "react-router";

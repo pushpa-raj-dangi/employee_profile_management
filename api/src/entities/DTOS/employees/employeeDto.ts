@@ -1,4 +1,13 @@
 import { Field, ObjectType } from "type-graphql";
+@ObjectType()
+export class EmployeeProfile {
+  @Field()
+  firstName!: string;
+
+  @Field()
+  lastName!: string;
+}
+
 
 @ObjectType()
 export class EmployeeDTO {
@@ -18,11 +27,3 @@ export class EmployeeDTO {
   isActive?: boolean;
 }
 
-@ObjectType()
-export class EmployeeProfile {
-  @Field()
-  firstName!: string;
-
-  @Field()
-  lastName!: string;
-}

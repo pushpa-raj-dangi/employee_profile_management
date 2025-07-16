@@ -4,10 +4,8 @@ export const LOGIN_MUTATION = gql`
   mutation Login($email: String!, $password: String!) {
     login(email: $email, password: $password) {
       success
-      user {
+      data {
         id
-        email
-        role
       }
     }
   }
@@ -15,15 +13,17 @@ export const LOGIN_MUTATION = gql`
 
 export const ME_MUTATION = gql`
   mutation Me {
-    me {
-      success
-      user {
-        id
-        email
-        role
-      }
+  me {
+    success
+    message
+    code
+    data {
+      id
+      email
+      role
     }
   }
+}
 `;
 export const COMPLETE_REGISTRATION_MUTATION = gql`
   mutation CompleteRegistration(
@@ -50,9 +50,14 @@ export const COMPLETE_REGISTRATION_MUTATION = gql`
   }
 `;
 
-
 export const LOGOUT_MUTATION = gql`
   mutation Logout {
     logout
+  }
+`;
+
+export const IS_TOKEN_VALID = gql`
+  mutation IsTokenValid($token: String!) {
+    isTokenValid(token: $token)
   }
 `;

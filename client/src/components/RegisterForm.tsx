@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useMutation } from '@apollo/client';
+import { gql } from '@apollo/client';
 import {
   Stepper,
   Step,
@@ -10,57 +12,104 @@ import {
   Paper,
   FormControl,
   FormLabel,
-  FormHelperText,
-  Checkbox,
   Grid,
+  Alert,
+  CircularProgress,
 } from "@mui/material";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router";
 
-interface Error {
-  email?: string;
-  tempPassword?: string;
-  newPassword?: string;
-  confirmPassword?: string;
-  employeeNumber?: string;
-  department?: string;
-  fullName?: string;
-  postalCode?: string;
-  phoneNumber?: string;
-  agreeTerms?: string;
-  name?: string;
+const COMPLETE_REGISTRATION = gql`
+  mutation CompleteRegistration(
+    $token: String!
+    $registerInput: RegisterInput!
+    $profileInput: ProfileInput!
+  ) {
+    completeRegistration(
+      token: $token
+      registerInput: $registerInput
+      profileInput: $profileInput
+    )
+  }
+`;
+
+const accountVerificationSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  tempPassword: z
+    .string()
+    .min(8, "Temporary password must be at least 8 characters"),
+});
+
+const profileSetupSchema = z
+  .object({
+    newPassword: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+      .regex(/[0-9]/, "Password must contain at least one number"),
+    confirmPassword: z.string(),
+    employeeNumber: z
+      .string()
+      .min(3, "Employee number must be at least 3 characters"),
+    department: z.string().optional(),
+    fullName: z.string().min(2, "Full name must be at least 2 characters"),
+    postalCode: z.string().optional(),
+    phoneNumber: z.string().optional(),
+    address: z.string().optional(),
+    birthday: z.string().optional(),
+    notes: z.string().optional(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+
+const fullFormSchema = accountVerificationSchema.merge(profileSetupSchema);
+
+type FormData = z.infer<typeof fullFormSchema>;
+
+interface RegistrationFormProps {
+  token: string;
 }
 
-const RegistrationForm = () => {
+const RegistrationForm: React.FC<RegistrationFormProps> = ({ token }) => {
   const [activeStep, setActiveStep] = useState(0);
-  const [formData, setFormData] = useState({
-    email: "",
-    tempPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-    employeeNumber: "",
-    department: "",
-    fullName: "",
-    postalCode: "",
-    phoneNumber: "",
-    address: "",
-    birthday: "",
-    notes: "",
-    agreeTerms: false,
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const [completeRegistration, { loading }] = useMutation(COMPLETE_REGISTRATION, {
+    onCompleted: () => {
+      setActiveStep(2);
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 2000);
+    },
+    onError: (error) => {
+      setError(error.message);
+    },
   });
-  const [errors, setErrors] = useState<Error>({} as Error);
 
-  const steps = ["Account Verification", "Profile Setup"];
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    trigger,
+  } = useForm<FormData>({
+    resolver: zodResolver(fullFormSchema),
+    mode: "onBlur",
+  });
 
-  const handleNext = () => {
+  const steps = ["Account Verification", "Profile Setup", "Complete"];
+
+  const handleNext = async () => {
+    setError(null);
+    
     if (activeStep === 0) {
-      const newErrors = {} as Error;
-      if (!formData.email) newErrors.email = "Email is required";
-      if (!formData.tempPassword)
-        newErrors.tempPassword = "Temporary password is required";
-
-      if (Object.keys(newErrors).length > 0) {
-        setErrors(newErrors);
-        return;
-      }
+      const isValid = await trigger(["email", "tempPassword"]);
+      if (!isValid) return;
     }
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
@@ -69,46 +118,34 @@ const RegistrationForm = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-
-    // Clear error when user types
-    if (errors.name as string) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors.name;
-        return newErrors;
+  const onSubmit = async (data: FormData) => {
+    setError(null);
+    
+    try {
+      await completeRegistration({
+        variables: {
+          token,
+          registerInput: {
+            email: data.email,
+            password: data.newPassword,
+            tempPassword: data.tempPassword,
+          },
+          profileInput: {
+            employeeNumber: data.employeeNumber,
+            department: data.department || null,
+            fullName: data.fullName,
+            postalCode: data.postalCode || null,
+            address: data.address || null,
+            phoneNumber: data.phoneNumber || null,
+            birthday: data.birthday || null,
+            notes: data.notes || null,
+          },
+        },
       });
+    } catch (err) {
+      // Error is handled by onError callback
+      console.error('Registration error:', err);
     }
-  };
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    // Validate step 2 fields
-    const newErrors = {} as Error;
-    if (!formData.newPassword) newErrors.newPassword = "Password is required";
-    if (formData.newPassword !== formData.confirmPassword)
-      newErrors.confirmPassword = "Passwords do not match";
-    if (!formData.employeeNumber)
-      newErrors.employeeNumber = "Employee number is required";
-    if (!formData.fullName) newErrors.fullName = "Full name is required";
-    if (!formData.agreeTerms)
-      newErrors.agreeTerms = "You must agree to the terms";
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    // Submit form data
-    console.log("Form submitted:", formData);
-    // Here you would typically send the data to your backend
   };
 
   const getStepContent = (step: number) => {
@@ -120,35 +157,37 @@ const RegistrationForm = () => {
               Enter your email and temporary password to begin registration
             </Typography>
 
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+
             <TextField
               margin="normal"
               required
               fullWidth
               id="email"
               label="Email Address"
-              name="email"
               autoComplete="email"
-              value={formData.email}
-              onChange={handleChange}
               error={!!errors.email}
-              helperText={errors.email}
+              helperText={errors.email?.message}
+              {...register("email")}
             />
 
             <TextField
               margin="normal"
               required
               fullWidth
-              name="tempPassword"
               label="Temporary Password"
               type="password"
               id="tempPassword"
-              value={formData.tempPassword}
-              onChange={handleChange}
               error={!!errors.tempPassword}
               helperText={
-                errors.tempPassword ||
+                errors.tempPassword?.message ||
                 "Enter the temporary password from your email"
               }
+              {...register("tempPassword")}
             />
           </Box>
         );
@@ -159,107 +198,95 @@ const RegistrationForm = () => {
               Complete your profile and set your permanent password
             </Typography>
 
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+
             <Grid container spacing={2} sx={{ mb: 2 }}>
               <FormControl component="fieldset" sx={{ mt: 3, width: "100%" }}>
-                <FormLabel
-                  sx={{
-                    fontWeight: "bold",
-                  }}
-                  component="legend"
-                >
+                <FormLabel sx={{ fontWeight: "bold" }} component="legend">
                   Account Setup
                 </FormLabel>
                 <Grid container spacing={2}>
-                  <Grid
-                    size={{
-                      xs: 12,
-                      sm: 6,
-                    }}
-                  >
+                  <Grid size={
+                    {
+                      xs:12,
+                      sm:6
+                    }
+                  }>
                     <TextField
                       margin="normal"
                       required
                       fullWidth
-                      name="newPassword"
                       label="New Password"
                       type="password"
                       id="newPassword"
-                      value={formData.newPassword}
-                      onChange={handleChange}
                       error={!!errors.newPassword}
-                      helperText={errors.newPassword}
+                      helperText={errors.newPassword?.message}
+                      {...register("newPassword")}
                     />
                   </Grid>
 
-                  <Grid
-                    size={{
-                      xs: 12,
-                      sm: 6,
-                    }}
-                  >
+                  <Grid size={
+                    {
+                      xs:12,
+                      sm:6
+                    }
+                  }>
                     <TextField
                       margin="normal"
                       required
                       fullWidth
-                      name="confirmPassword"
                       label="Confirm Password"
                       type="password"
                       id="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
                       error={!!errors.confirmPassword}
-                      helperText={errors.confirmPassword}
+                      helperText={errors.confirmPassword?.message}
+                      {...register("confirmPassword")}
                     />
                   </Grid>
                 </Grid>
               </FormControl>
 
               <FormControl component="fieldset" sx={{ mt: 1, width: "100%" }}>
-                <FormLabel
-                  component="legend"
-                  sx={{
-                    fontWeight: "bold",
-                  }}
-                >
+                <FormLabel component="legend" sx={{ fontWeight: "bold" }}>
                   Employee Profile
                 </FormLabel>
 
                 <Grid container spacing={2}>
-                  <Grid
-                    size={{
-                      xs: 12,
-                      sm: 6,
-                    }}
-                  >
+                  <Grid size={
+                    {
+                      xs:12,
+                      sm:6
+                    }
+                  }>
                     <TextField
                       margin="normal"
                       required
                       fullWidth
-                      name="employeeNumber"
                       label="Employee Number"
                       id="employeeNumber"
                       placeholder="e.g., EMP001"
-                      value={formData.employeeNumber}
-                      onChange={handleChange}
                       error={!!errors.employeeNumber}
-                      helperText={errors.employeeNumber}
+                      helperText={errors.employeeNumber?.message}
+                      {...register("employeeNumber")}
                     />
                   </Grid>
-                  <Grid
-                    size={{
-                      xs: 12,
-                      sm: 6,
-                    }}
-                  >
+                  <Grid size={
+                    {
+                      xs:12,
+                      sm:6
+                    }
+                  }>
                     <TextField
                       margin="normal"
                       fullWidth
-                      name="department"
                       label="Department"
                       id="department"
                       placeholder="e.g., Engineering"
-                      value={formData.department}
-                      onChange={handleChange}
+                      {...register("department")}
                     />
                   </Grid>
                 </Grid>
@@ -268,48 +295,42 @@ const RegistrationForm = () => {
                   margin="normal"
                   required
                   fullWidth
-                  name="fullName"
                   label="Full Name"
                   id="fullName"
-                  value={formData.fullName}
-                  onChange={handleChange}
                   error={!!errors.fullName}
-                  helperText={errors.fullName}
+                  helperText={errors.fullName?.message}
+                  {...register("fullName")}
                 />
               </FormControl>
             </Grid>
 
             <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid
-                size={{
-                  xs: 12,
-                  sm: 6,
-                }}
-              >
+              <Grid size={
+                {
+                  xs:12,
+                  sm:6
+                }
+              }>
                 <TextField
                   fullWidth
-                  name="postalCode"
                   label="Postal Code"
                   id="postalCode"
                   placeholder="e.g., 100-0001"
-                  value={formData.postalCode}
-                  onChange={handleChange}
+                  {...register("postalCode")}
                 />
               </Grid>
-              <Grid
-                size={{
-                  xs: 12,
-                  sm: 6,
-                }}
-              >
+              <Grid size={
+                {
+                  xs:12,
+                  sm:6
+                }
+              }>
                 <TextField
                   fullWidth
-                  name="phoneNumber"
                   label="Phone Number"
                   id="phoneNumber"
                   placeholder="e.g., 090-1234-5678"
-                  value={formData.phoneNumber}
-                  onChange={handleChange}
+                  {...register("phoneNumber")}
                 />
               </Grid>
             </Grid>
@@ -317,57 +338,47 @@ const RegistrationForm = () => {
             <TextField
               margin="normal"
               fullWidth
-              name="address"
               label="Address"
               id="address"
               multiline
               rows={3}
-              value={formData.address}
-              onChange={handleChange}
+              {...register("address")}
             />
 
             <TextField
               margin="normal"
               fullWidth
-              name="birthday"
               label="Birthday"
               id="birthday"
-              placeholder="mm/dd/yyyy"
-              value={formData.birthday}
-              onChange={handleChange}
+              type="date"
+              InputLabelProps={{ shrink: true }}
+              {...register("birthday")}
             />
 
             <TextField
               margin="normal"
               fullWidth
-              name="notes"
               label="Notes"
               id="notes"
               placeholder="Additional information..."
               multiline
               rows={2}
-              value={formData.notes}
-              onChange={handleChange}
+              {...register("notes")}
             />
-
-            <Box sx={{ mt: 2 }}>
-              <FormControl error={!!errors.agreeTerms}>
-                <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <Checkbox
-                    name="agreeTerms"
-                    checked={formData.agreeTerms}
-                    onChange={handleChange}
-                    color="primary"
-                  />
-                  <Typography variant="body2">
-                    I agree to the terms and conditions
-                  </Typography>
-                </Box>
-                {errors.agreeTerms && (
-                  <FormHelperText>{errors.agreeTerms}</FormHelperText>
-                )}
-              </FormControl>
-            </Box>
+          </Box>
+        );
+      case 2:
+        return (
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <Typography variant="h4" gutterBottom color="primary">
+              🎉 Registration Complete!
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              Thank you for registering. Your account has been created successfully.
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Redirecting to dashboard...
+            </Typography>
           </Box>
         );
       default:
@@ -386,40 +397,33 @@ const RegistrationForm = () => {
           ))}
         </Stepper>
 
-        {activeStep === steps.length ? (
-          <React.Fragment>
-            <Typography variant="h5" gutterBottom>
-              Registration Complete
-            </Typography>
-            <Typography>
-              Thank you for registering. Your account has been created
-              successfully.
-            </Typography>
-          </React.Fragment>
-        ) : (
-          <React.Fragment>
-            {getStepContent(activeStep)}
+        {getStepContent(activeStep)}
 
-            <Box
-              sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}
+        {activeStep < 2 && (
+          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
+            <Button
+              disabled={activeStep === 0}
+              onClick={handleBack}
+              variant="outlined"
             >
-              <Button
-                disabled={activeStep === 0}
-                onClick={handleBack}
-                variant="outlined"
-              >
-                Back
-              </Button>
+              Back
+            </Button>
 
-              {activeStep === steps.length - 1 ? (
-                <Button variant="contained">Complete Registration</Button>
-              ) : (
-                <Button variant="contained" onClick={handleNext}>
-                  Continue
-                </Button>
-              )}
-            </Box>
-          </React.Fragment>
+            {activeStep === steps.length - 2 ? (
+              <Button
+                variant="contained"
+                onClick={handleSubmit(onSubmit)}
+                disabled={loading}
+                startIcon={loading ? <CircularProgress size={20} /> : null}
+              >
+                {loading ? "Registering..." : "Complete Registration"}
+              </Button>
+            ) : (
+              <Button variant="contained" onClick={handleNext}>
+                Continue
+              </Button>
+            )}
+          </Box>
         )}
       </Paper>
     </Box>

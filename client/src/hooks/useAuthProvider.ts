@@ -14,9 +14,10 @@ export const useAuthProvider = () => {
     setError(null);
     try {
       const loginData = await loginService(client, email, password);
+      console.log("Login Data:", loginData);
       if (loginData.login.success) {
         const meData = await meService(client);
-        setUser(meData.me.user);
+        setUser(meData.me.data);
       } else {
         throw new Error("Login failed");
       }

@@ -10,26 +10,13 @@ import { Service } from "typedi";
 @Service()
 export class AuthService {
   async login(email: string, password: string) {
-    
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) throw new ValidationError("Invalid email or password");
 
     const valid = await verifyPassword(password, user.password);
-    console.log("Password verification result:", valid);
+
     if (!valid) throw new ValidationError("Invalid email or password");
-
-    return { user };
-  }
-
-  async register(email: string, password: string) {
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) throw new ValidationError("User already exists");
-
-    const hashedPassword = await hashPassword(password);
-    const user = await prisma.user.create({
-      data: { email, password: hashedPassword, role: Role.GENERAL_EMPLOYEE },
-    });
 
     return { user };
   }
@@ -44,7 +31,7 @@ export class AuthService {
 
     if (invitation.email !== registerInput.email)
       throw new ValidationError("Email doesn't match invitation");
-    
+
     if (invitation.expiresAt < new Date())
       throw new ValidationError("Invitation has expired");
 
@@ -69,7 +56,7 @@ export class AuthService {
     return { user };
   }
 
-  async logout(session: any) {
+  async logout(session) {
     return new Promise((resolve, reject) => {
       session.destroy((err: any) => {
         if (err) reject(false);
@@ -78,15 +65,29 @@ export class AuthService {
     });
   }
 
-  async me(userId:string) {
-   
+  async me(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { profile: true,  companies: { include: { company: true } } },
+      include: { profile: true, companies: { include: { company: true } } },
     });
 
     if (!user) return null;
 
     return user;
+  }
+
+  async isTokenValid(token: string) {
+    const invitation = await prisma.invitation.findUnique({
+      where: { token },
+      include: { company: true },
+    });
+
+    if (!invitation) return false;
+
+    if (invitation.status !== "PENDING") return false;
+
+    if (invitation.expiresAt < new Date()) return false;
+
+    return true;
   }
 }

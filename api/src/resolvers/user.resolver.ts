@@ -1,24 +1,23 @@
+import { AuthenticationError } from "apollo-server-express";
 import {
-  Resolver,
-  Mutation,
   Arg,
   Authorized,
-  Query,
   Ctx,
   Int,
+  Mutation,
+  Query,
+  Resolver,
 } from "type-graphql";
-import { User, Role } from "../entities/user.entity";
-import { RegisterInput } from "../inputs/register.input";
-import { ProfileInput } from "../inputs/profile.input";
-import { Invitation } from "../entities/invitation.entity";
-import { UserService } from "../services/user.service";
 import { Inject, Service } from "typedi";
-import { SendInvitationInput } from "../inputs/send-invitation.input";
-import { AuthenticationError } from "apollo-server-express";
-import { CustomContext } from "../types";
-import { EmployeeDTO } from "../entities/DTOS/employees/employeeDto";
+import { Invitation } from "../entities/invitation.entity";
+import { ProfileObject } from "../entities/objects/profileObject";
 import { PaginatedEmployees } from "../entities/paginatedEmployee.entity";
-import { ProfileObject } from "../entities/objects/ProfileObject";
+import { Role, User } from "../entities/user.entity";
+import { ProfileInput } from "../inputs/profile.input";
+import { RegisterInput } from "../inputs/register.input";
+import { SendInvitationInput } from "../inputs/send-invitation.input";
+import { UserService } from "../services/user.service";
+import { CustomContext } from "../types";
 
 @Service()
 @Resolver(() => User)

@@ -1,8 +1,7 @@
 import { ObjectType, Field, ID, registerEnumType } from 'type-graphql';
-import { Company } from './company.entity';
-import { Profile } from './profile.entity';
 import { Invitation } from './invitation.entity';
-
+import { Profile } from './profile.entity';
+import { Company } from './company.entity';
 export enum Role {
   SYSTEM_ADMIN = 'SYSTEM_ADMIN',
   MANAGER = 'MANAGER',

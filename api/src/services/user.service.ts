@@ -5,13 +5,13 @@ import { prisma } from "../config/prisma";
 import { EmployeeDTO } from "../entities/DTOS/employees/employeeDto";
 import { InvitationStatus } from "../entities/invitation.entity";
 import { Role } from "../entities/user.entity";
-import { ForbiddenError, NotFoundError, ValidationError } from "../errors";
+import { AuthorizationError, NotFoundError, ValidationError } from "../errors";
 import { ProfileInput } from "../inputs/profile.input";
 import { RegisterInput } from "../inputs/register.input";
 import { SendInvitationInput } from "../inputs/send-invitation.input";
 import { generateToken, hashPassword } from "../utils/auth/auth";
 import { sendEmail } from "../utils/email";
-import { ProfileObject } from "../entities/objects/ProfileObject";
+import { ProfileObject } from "../entities/objects/profileObject";
 
 @Service()
 export class UserService {
@@ -72,8 +72,8 @@ export class UserService {
 
       // Authorization logic
       if (currentUser.role === "GENERAL_EMPLOYEE" && userId !== input.userId) {
-        throw new ForbiddenError(
-          "General employees can only update their own profile."
+        throw new AuthorizationError(
+          "General employees can only update their own profiles."
         );
       }
 
@@ -81,7 +81,7 @@ export class UserService {
         currentUser.role === "MANAGER" &&
         currentUser.companies.every((c) => !c.companyId)
       ) {
-        throw new ForbiddenError(
+        throw new AuthorizationError(
           "Managers can only update profiles within their own company."
         );
       }
@@ -128,7 +128,7 @@ export class UserService {
         });
 
         if (!companyUser) {
-          throw new ForbiddenError(
+          throw new AuthorizationError(
             "You don't have permission to invite to this company"
           );
         }
