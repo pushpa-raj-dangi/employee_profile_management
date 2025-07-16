@@ -4,12 +4,15 @@ import "./index.css";
 import App from "./App.tsx";
 import ApolloProvider from "./apollo/ApolloProvider.tsx";
 import { AuthProvider } from "./auth/AuthProvider.tsx";
+import { SnackbarProvider } from "./snackbar/SnackbarProvider.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ApolloProvider>
       <AuthProvider>
-        <App />
+        <SnackbarProvider>
+          <App />
+        </SnackbarProvider>
       </AuthProvider>
     </ApolloProvider>
   </StrictMode>

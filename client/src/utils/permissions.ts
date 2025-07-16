@@ -29,3 +29,5 @@ export const  Role = {
   MANAGER: "MANAGER",
   GENERAL_EMPLOYEE: "GENERAL_EMPLOYEE",
 }
+
+export type Role = keyof typeof Role;

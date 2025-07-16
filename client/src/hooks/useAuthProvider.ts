@@ -8,7 +8,6 @@ export const useAuthProvider = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-
   const login = async (email: string, password: string) => {
     setLoading(true);
     setError(null);

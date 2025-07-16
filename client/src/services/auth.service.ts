@@ -1,6 +1,7 @@
 
 import { ApolloClient, type NormalizedCacheObject } from "@apollo/client";
-import { LOGIN_MUTATION, LOGOUT_MUTATION, ME_MUTATION } from "../graphql/mutations/authMutations";
+import { LOGIN_MUTATION, LOGOUT_MUTATION } from "../graphql/mutations/authMutations";
+import { ME_QUERY } from "../graphql/queries/authQueries";
 
 export const loginService = async (
   client: ApolloClient<NormalizedCacheObject>,
@@ -15,10 +16,10 @@ export const logoutService = async (
   client: ApolloClient<NormalizedCacheObject>
 ) => {
   const { data } = await client.mutate({ mutation: LOGOUT_MUTATION });
-  return data;
+  return data.logout;
 };
 
 export const meService = async (client: ApolloClient<NormalizedCacheObject>) => {
-  const { data } = await client.mutate({ mutation: ME_MUTATION });
+  const { data } = await client.query({ query: ME_QUERY, fetchPolicy: "no-cache" });
   return data;
 };

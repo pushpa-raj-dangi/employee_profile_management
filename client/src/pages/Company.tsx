@@ -1,4 +1,4 @@
-import { useQuery } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client";
 import { Factory } from "@mui/icons-material";
 import InfoIcon from "@mui/icons-material/Info";
 import {
@@ -16,24 +16,63 @@ import {
   Tooltip,
   Typography
 } from "@mui/material";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import AddCompanyDialog from "../components/AddCompanyDialog";
 import PageHeader from "../components/PageHeader";
 import PageSubHeader from "../components/PageSubHeader";
-import type { CompanyDTO } from "../types/graphql/Company";
+import { CREATE_COMPANY_MUTATION } from "../graphql/mutations/companyMutations";
 import { GET_COMPANIES_FULL } from "../graphql/queries/companyQueries";
+import { useSnackbar } from "../hooks/useSnackbar";
+import type {
+  CompanyFormData,
+  CreateCompanyInput,
+} from "../schemas/company/createCompanySchema";
+import type { CompanyDTO } from "../types/graphql/Company";
 
 const Company = () => {
   const [isOpen, setIsOpen] = useState(false);
-  
+  const { showSnackbar } = useSnackbar();
+
+  const [createCompany, { loading: creating, error: createError }] =
+    useMutation<
+      {
+        createCompany: CompanyDTO;
+      },
+      {
+        input: CreateCompanyInput;
+      }
+    >(CREATE_COMPANY_MUTATION);
+
   const { loading, error, data } = useQuery<{
-      companies: CompanyDTO[];
+    companies: CompanyDTO[];
   }>(GET_COMPANIES_FULL);
 
-  if (loading) return <CircularProgress />;
-  if (error) return <Alert severity="error">Error loading companies: {error.message}</Alert>;
-
   const companies = data?.companies || [];
+
+  const handleSubmit = async (formData: CompanyFormData) => {
+    try {
+      await createCompany({ variables: { input: formData } });
+      setIsOpen(false);
+      showSnackbar("Company created successfully", "success");
+    } catch (error) {
+      showSnackbar(`Error creating company: ${error}`, "error");
+    }
+  };
+
+  useEffect(() => {
+    if (createError) {
+      showSnackbar(`Error creating company: ${createError.message}`, "error");
+    }
+  }, [createError, showSnackbar]);
+
+
+  if (creating) return <CircularProgress />;
+
+  if (loading) return <CircularProgress />;
+  if (error)
+    return (
+      <Alert severity="error">Error loading companies: {error.message}</Alert>
+    );
 
   return (
     <Box>
@@ -42,6 +81,7 @@ const Company = () => {
         subtitle="Manage company information and settings"
         buttonText="Add New Company"
         onButtonClick={() => setIsOpen(true)}
+        allowedRoles={["SYSTEM_ADMIN"]}
       />
       <Box
         sx={{ mb: 2, p: 2, backgroundColor: "#f5f5f5", borderRadius: "8px" }}
@@ -57,7 +97,9 @@ const Company = () => {
             <Table>
               <TableHead>
                 <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                  <TableCell sx={{ fontWeight: "bold" }}>Company Name</TableCell>
+                  <TableCell sx={{ fontWeight: "bold" }}>
+                    Company Name
+                  </TableCell>
                   <TableCell sx={{ fontWeight: "bold" }}>Email</TableCell>
                   <TableCell sx={{ fontWeight: "bold" }}>Phone</TableCell>
                   <TableCell sx={{ fontWeight: "bold" }}>Established</TableCell>
@@ -65,7 +107,7 @@ const Company = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {companies.map((company:CompanyDTO) => (
+                {companies.map((company: CompanyDTO) => (
                   <React.Fragment key={company.id}>
                     <TableRow hover>
                       <TableCell>
@@ -76,7 +118,9 @@ const Company = () => {
                       <TableCell>{company.email || "-"}</TableCell>
                       <TableCell>{company.phoneNumber || "-"}</TableCell>
                       <TableCell>
-                        {new Date(company.establishmentDate).toLocaleDateString() || "-"}
+                        {new Date(
+                          company.establishmentDate
+                        ).toLocaleDateString() || "-"}
                       </TableCell>
                       <TableCell>
                         <Tooltip title="Details">
@@ -94,6 +138,7 @@ const Company = () => {
         </Paper>
       </Box>
       <AddCompanyDialog
+        onSubmit={handleSubmit}
         open={isOpen}
         onClose={() => setIsOpen(false)}
       />

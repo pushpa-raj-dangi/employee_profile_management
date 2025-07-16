@@ -1,4 +1,6 @@
-import { useState } from "react";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import {
   Dialog,
   DialogTitle,
@@ -13,44 +15,50 @@ import {
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { Controller } from "react-hook-form";
+import { companySchema, type CompanyFormData } from "../schemas/company/createCompanySchema";
+
 
 type AddCompanyDialogProps = {
   open: boolean;
   onClose: () => void;
+  onSubmit: (data: CompanyFormData) => void;
 };
 
-const AddCompanyDialog = ({ open, onClose }: AddCompanyDialogProps) => {
-  const [formData, setFormData] = useState({
-    companyName: "",
-    companyNameKana: "",
-    postalCode: "",
-    phoneNumber: "",
-    address: "",
-    email: "",
-    websiteUrl: "",
-    establishmentDate: null,
-    notes: "",
+const AddCompanyDialog = ({
+  open,
+  onClose,
+  onSubmit,
+}: AddCompanyDialogProps) => {
+  const {
+    control,
+    handleSubmit,
+    register,
+    formState: { errors, isValid },
+    reset,
+  } = useForm<CompanyFormData>({
+    resolver: zodResolver(companySchema),
+    mode: "onChange",
+    defaultValues: {
+      name: "",
+      zipCode: "",
+      address: "",
+      phoneNumber: "",
+      email: "",
+      website: "",
+      establishmentDate: new Date(),
+      remarks: "",
+    },
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleDateChange = (date: Date | null) => {
-    setFormData(
-      (prev) => ({ ...prev, establishmentDate: date }) as typeof formData
-    );
-  };
-
-  const handleSubmit = () => {
-    console.log(formData);
+  const handleClose = () => {
+    reset();
     onClose();
   };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogTitle>
           <Box display="flex" flexDirection="column">
             <Typography variant="h6">Add New Company</Typography>
@@ -60,113 +68,154 @@ const AddCompanyDialog = ({ open, onClose }: AddCompanyDialogProps) => {
           </Box>
         </DialogTitle>
         <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                name="companyName"
-                label="Company Name"
-                fullWidth
-                variant="filled"
-                required
-                value={formData.companyName}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                name="companyNameKana"
-                label="Company Name (Kana)"
-                fullWidth
-                variant="filled"
-                value={formData.companyNameKana}
-                onChange={handleChange}
-              />
-            </Grid>
+          <form onSubmit={handleSubmit(onSubmit)}>
+          
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 6,
+                }}
+              >
+                <TextField
+                  {...register("name")}
+                  label="Company Name"
+                  fullWidth
+                  variant="filled"
+                  required
+                  error={!!errors.name}
+                  helperText={errors.name?.message}
+                />
+              </Grid>
 
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                name="postalCode"
-                label="Postal Code"
-                fullWidth
-                variant="filled"
-                value={formData.postalCode}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                name="phoneNumber"
-                label="Phone Number"
-                fullWidth
-                variant="filled"
-                value={formData.phoneNumber}
-                onChange={handleChange}
-              />
-            </Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 6,
+                }}
+              >
+                <TextField
+                  {...register("zipCode")}
+                  label="Postal Code"
+                  fullWidth
+                  variant="filled"
+                  required
+                  error={!!errors.zipCode}
+                  helperText={errors.zipCode?.message}
+                />
+              </Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 6,
+                }}
+              >
+                <TextField
+                  {...register("phoneNumber")}
+                  label="Phone Number"
+                  fullWidth
+                  variant="filled"
+                  required
+                  error={!!errors.phoneNumber}
+                  helperText={errors.phoneNumber?.message}
+                />
+              </Grid>
 
-            <Grid size={12}>
-              <TextField
-                name="address"
-                label="Address"
-                fullWidth
-                variant="filled"
-                multiline
-                rows={2}
-                value={formData.address}
-                onChange={handleChange}
-              />
-            </Grid>
+              <Grid size={{ sm: 12 }}>
+                <TextField
+                  {...register("address")}
+                  label="Address"
+                  fullWidth
+                  variant="filled"
+                  multiline
+                  rows={2}
+                  required
+                  error={!!errors.address}
+                  helperText={errors.address?.message}
+                />
+              </Grid>
 
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                name="email"
-                label="Email"
-                fullWidth
-                variant="filled"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                name="websiteUrl"
-                label="Website URL"
-                fullWidth
-                variant="filled"
-                value={formData.websiteUrl}
-                onChange={handleChange}
-              />
-            </Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 6,
+                }}
+              >
+                <TextField
+                  {...register("email")}
+                  label="Email"
+                  fullWidth
+                  variant="filled"
+                  type="email"
+                  required
+                  error={!!errors.email}
+                  helperText={errors.email?.message}
+                />
+              </Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 6,
+                }}
+              >
+                <TextField
+                  {...register("website")}
+                  label="Website URL"
+                  fullWidth
+                  variant="filled"
+                  error={!!errors.website}
+                  helperText={errors.website?.message}
+                />
+              </Grid>
 
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <DatePicker
-                label="Establishment Date"
-                value={formData.establishmentDate}
-                onChange={handleDateChange}
-              />
-            </Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 6,
+                }}
+              >
+                <Controller
+                  name="establishmentDate"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePicker
+                      label="Establishment Date"
+                      value={field.value}
+                      onChange={field.onChange}
+                      slotProps={{
+                        textField: {
+                          variant: "filled",
+                          fullWidth: true,
+                          error: !!errors.establishmentDate,
+                          helperText: errors.establishmentDate?.message,
+                        },
+                      }}
+                    />
+                  )}
+                />
+              </Grid>
 
-            <Grid size={12}>
-              <TextField
-                name="notes"
-                label="Notes"
-                fullWidth
-                variant="filled"
-                multiline
-                rows={3}
-                value={formData.notes}
-                onChange={handleChange}
-              />
+              <Grid size={{ sm: 12 }}>
+                <TextField
+                  {...register("remarks")}
+                  label="Notes"
+                  fullWidth
+                  variant="filled"
+                  multiline
+                  rows={3}
+                  error={!!errors.remarks}
+                  helperText={errors.remarks?.message}
+                />
+              </Grid>
             </Grid>
-          </Grid>
+          </form>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={handleClose}>Cancel</Button>
           <Button
-            onClick={handleSubmit}
+            onClick={handleSubmit(onSubmit)}
             variant="contained"
-            disabled={!formData.companyName}
+            disabled={!isValid}
           >
             Create
           </Button>

@@ -71,7 +71,7 @@ export class AuthResolver {
     });
   }
 
-  @Mutation(() => LoginResponse)
+  @Query(() => LoginResponse)
   async me(@Ctx() ctx: CustomContext): Promise<LoginResponse> {
     if (!ctx.req.session.userId) {
       return new LoginResponse(

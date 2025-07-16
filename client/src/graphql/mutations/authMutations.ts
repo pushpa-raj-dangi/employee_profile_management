@@ -11,20 +11,7 @@ export const LOGIN_MUTATION = gql`
   }
 `;
 
-export const ME_MUTATION = gql`
-  mutation Me {
-  me {
-    success
-    message
-    code
-    data {
-      id
-      email
-      role
-    }
-  }
-}
-`;
+
 export const COMPLETE_REGISTRATION_MUTATION = gql`
   mutation CompleteRegistration(
     $token: String!
@@ -52,7 +39,11 @@ export const COMPLETE_REGISTRATION_MUTATION = gql`
 
 export const LOGOUT_MUTATION = gql`
   mutation Logout {
-    logout
+    logout {
+      success
+      message
+      code
+    }
   }
 `;
 

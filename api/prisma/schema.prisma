@@ -61,7 +61,7 @@ model Company {
   website           String?       @db.VarChar(255)
   establishmentDate DateTime
   remarks           String?       @db.Text
-  images            String[]
+  images            String[]   
   users             CompanyUser[]
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
