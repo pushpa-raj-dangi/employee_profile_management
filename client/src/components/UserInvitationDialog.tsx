@@ -11,8 +11,15 @@ import {
   Typography,
 } from "@mui/material";
 import { useState } from "react";
+import { useAuth } from "../hooks/useAuth";
+import { invitationSchema } from "../schemas/invitations";
 import type { Company } from "../types/graphql/Company";
+import { Role } from "../utils/permissions";
 import CompanySelector from "./CompanySelector";
+import { SEND_INVITATION_MUTATION } from "../graphql/mutations/invitationMutations";
+import { useMutation } from "@apollo/client";
+import { useSnackbar } from "../hooks/useSnackbar";
+import { useErrorHandler } from "../utils/handleApolloError";
 
 type UserInvitationDialogProps = {
   open: boolean;
@@ -21,13 +28,60 @@ type UserInvitationDialogProps = {
 
 const UserInvitationDialog = ({ open, onClose }: UserInvitationDialogProps) => {
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("Administrative User");
-  const [sendCredentials] = useState(true);
-
+  const [role, setRole] = useState("");
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
 
-  const handleSubmit = () => {
-    console.log({ email, role, sendCredentials });
+  const [errors, setErrors] = useState<{ email?: string }>({});
+  const { user } = useAuth();
+  const { showSnackbar } = useSnackbar();
+
+  const { handleGraphQLError } = useErrorHandler();
+
+  const allRoles = [Role.GENERAL_EMPLOYEE, Role.SYSTEM_ADMIN, Role.MANAGER];
+
+  const visibleRoles =
+    user?.role === Role.MANAGER
+      ? allRoles.filter((r) => r !== Role.SYSTEM_ADMIN)
+      : allRoles;
+
+  const [sendInvitation] = useMutation(SEND_INVITATION_MUTATION);
+
+  const handleSubmit = async () => {
+    const result = invitationSchema.safeParse({
+      email,
+      role,
+      companyId: selectedCompany?.id ?? "",
+    });
+
+    if (!result.success) {
+      const formatted = result.error.format();
+      setErrors({
+        email: formatted.email?._errors?.[0],
+      });
+      return;
+    }
+
+    try {
+      const response = await sendInvitation({
+        variables: {
+          input: {
+            email,
+            role,
+            companyId: selectedCompany?.id ?? "",
+          },
+        },
+      });
+
+      if (response.data?.sendInvitation) {
+        showSnackbar("Invitation sent successfully", "success");
+      } else {
+        showSnackbar("Failed to send invitation", "error");
+      }
+    } catch (error) {
+      handleGraphQLError(error, "Failed to send invitation.");
+    }
+
+    setErrors({});
     onClose();
   };
 
@@ -41,6 +95,7 @@ const UserInvitationDialog = ({ open, onClose }: UserInvitationDialogProps) => {
           </Typography>
         </Box>
       </DialogTitle>
+
       <DialogContent>
         <TextField
           autoFocus
@@ -53,6 +108,8 @@ const UserInvitationDialog = ({ open, onClose }: UserInvitationDialogProps) => {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          error={Boolean(errors.email)}
+          helperText={errors.email}
           sx={{ mt: 2 }}
         />
 
@@ -68,15 +125,20 @@ const UserInvitationDialog = ({ open, onClose }: UserInvitationDialogProps) => {
           onChange={(e) => setRole(e.target.value)}
           sx={{ mt: 2, mb: 2 }}
         >
-          <MenuItem value="Administrative User">Administrative User</MenuItem>
-          <MenuItem value="Regular User">Regular User</MenuItem>
-          <MenuItem value="Read-only User">Read-only User</MenuItem>
+          {visibleRoles.map((roleOption) => (
+            <MenuItem key={roleOption} value={roleOption}>
+              {roleOption}
+            </MenuItem>
+          ))}
         </TextField>
-        <CompanySelector
-          value={selectedCompany}
-          onChange={setSelectedCompany}
-          label="Select Company"
-        />
+
+        {user?.role === Role.MANAGER && (
+          <CompanySelector
+            value={selectedCompany}
+            onChange={setSelectedCompany}
+            label="Select Company"
+          />
+        )}
         <Box
           sx={{
             display: "flex",
@@ -94,9 +156,10 @@ const UserInvitationDialog = ({ open, onClose }: UserInvitationDialogProps) => {
           </Typography>
         </Box>
       </DialogContent>
+
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSubmit} variant="contained" disabled={!email}>
+        <Button onClick={handleSubmit} variant="contained">
           Send Invitation
         </Button>
       </DialogActions>

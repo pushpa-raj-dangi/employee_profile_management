@@ -11,7 +11,10 @@ export class InvitedBy {
   fullName!: string;
 
   @Field(() => Role)
-  role!: Role; // You missed this field before — it was crashing silently
+  role!: Role;
+
+  @Field({ nullable: true })
+  email?: string; 
 }
 
 @ObjectType()

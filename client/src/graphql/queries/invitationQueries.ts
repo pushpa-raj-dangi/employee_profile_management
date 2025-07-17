@@ -11,6 +11,7 @@ export const LIST_INVITATIONS = gql`
       invitedBy {
         id
         fullName
+        email
       }
     }
   }

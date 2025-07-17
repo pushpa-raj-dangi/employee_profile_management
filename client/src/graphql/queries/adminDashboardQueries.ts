@@ -9,3 +9,16 @@ export const GET_ADMIN_DASHBOARD_STATS = gql`
     }
   }
 `;
+
+export const GET_ALL_SYSTEM_ADMINS = gql`
+  query GetAllSystemAdmins {
+    getAllSystemAdmins {
+      id
+      email
+      role
+      createdAt
+      updatedAt
+      isActive
+    }
+  }
+`;

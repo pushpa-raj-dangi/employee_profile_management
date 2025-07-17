@@ -1,23 +1,23 @@
 import { ApolloServer } from "apollo-server-express";
+import connectRedis from "connect-redis";
 import cors from "cors";
 import express from "express";
+import session from "express-session";
 import { buildSchema } from "type-graphql";
+import Container from "typedi";
 import { AuthResolver } from "./resolvers/auth.resolver";
 import { CompanyResolver } from "./resolvers/company.resolver";
 import { DashboardResolver } from "./resolvers/dashboard.resolver";
+import { InvitationResolver } from "./resolvers/invitation.resolver";
+import { ProfileResolver } from "./resolvers/profile.resolver";
 import { UserResolver } from "./resolvers/user.resolver";
 import { customAuthChecker } from "./utils/auth/authChecker";
 import { createContext } from "./utils/context";
 import { formatError } from "./utils/errorFormatter";
 import { ExceptionFilter } from "./utils/exceptionFilter";
 import { graphqlRateLimiter } from "./utils/rateLimiter";
-import Container from "typedi";
-import session from "express-session";
 import redisClient from "./utils/redisClient";
-import connectRedis from "connect-redis";
-import { sendEmail } from "./utils/email";
-import { InvitationResolver } from "./resolvers/invitation.resolver";
-import { ProfileResolver } from "./resolvers/profile.resolver";
+import { AdminResolver } from "./resolvers/admin.resolver";
 
 const RedisStore = connectRedis(session);
 
@@ -25,19 +25,24 @@ async function startServer() {
   const app = express();
 
   app.use(
-  session({
-    store: new RedisStore({ client: redisClient }),
-    secret: process.env.SESSION_SECRET!||'asfkjsdfjweoirjiworjlkwejrewrweriwer',
-    resave: false,
-    saveUninitialized: true,
-    cookie: {
-      httpOnly: true,
-      secure: false,
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      sameSite: 'lax',
-    },
-  })
-);
+    session({
+      store: new RedisStore({
+        client: redisClient,
+        prefix: "sess:",
+        ttl: 86400 * 7,
+      }),
+      secret:
+        process.env.SESSION_SECRET! || "asfkjsdfjweoirjiworjlkwejrewrweriwer",
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        secure: false,
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+        sameSite: "lax",
+      },
+    })
+  );
   app.use(
     cors({
       origin: ["http://localhost:4200", "https://studio.apollographql.com"],
@@ -45,23 +50,28 @@ async function startServer() {
     })
   );
 
-  app.get("/", (req, res) => {
-    sendEmail({
-      to: "larazza@linkjetdata.com",
-      subject: "Welcome to the API server",
-      text: "Hello! Thank you for joining our API service."
-    });
-    res.send("Welcome to the API server!");
-  });
-
   app.use("/graphql", graphqlRateLimiter);
 
   app.get("/health", (req, res) => {
     res.json({ status: "ok" });
   });
 
+  app.use((err: any, req: any, res: any, next: any) => {
+    if (err.code !== "EBADCSRFTOKEN") return next(err);
+    // Handle session errors
+    res.status(403).send("Session expired or invalid");
+  });
+
   const schema = await buildSchema({
-    resolvers: [UserResolver, CompanyResolver, AuthResolver,InvitationResolver,ProfileResolver, DashboardResolver],
+    resolvers: [
+      UserResolver,
+      CompanyResolver,
+      AuthResolver,
+      InvitationResolver,
+      ProfileResolver,
+      AdminResolver,
+      DashboardResolver,
+    ],
     validate: false,
     globalMiddlewares: [ExceptionFilter],
     container: Container,

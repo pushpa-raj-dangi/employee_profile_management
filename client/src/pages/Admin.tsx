@@ -27,19 +27,25 @@ import {
 import { useState } from "react";
 import AddSystemAdminDialog from "../components/AddSystemAdminDialog";
 import { useQuery } from "@apollo/client";
-import { GET_ADMIN_DASHBOARD_STATS } from "../graphql/queries/adminDashboardQueries";
+import {
+  GET_ADMIN_DASHBOARD_STATS,
+  GET_ALL_SYSTEM_ADMINS,
+} from "../graphql/queries/adminDashboardQueries";
+import type { User } from "../types/graphql/User";
 
 const Admin = () => {
-
   const [isOpen, setIsOpen] = useState(false);
 
   const { data, loading, error } = useQuery(GET_ADMIN_DASHBOARD_STATS);
+
+  const { data: allAdminsData } = useQuery<{ getAllSystemAdmins: User[] }>(
+    GET_ALL_SYSTEM_ADMINS
+  );
 
   if (loading) return <p>Loading stats...</p>;
   if (error) return <p>Error fetching stats: {error.message}</p>;
 
   const { systemAdmins, users, companies } = data.getAdminDashboardStats;
-
 
   return (
     <Box>
@@ -155,7 +161,9 @@ const Admin = () => {
                 variant="contained"
                 startIcon={<PersonAdd />}
                 sx={{ textTransform: "none" }}
-                onClick={()=>{setIsOpen(true)}}
+                onClick={() => {
+                  setIsOpen(true);
+                }}
               >
                 Create System Admin
               </Button>
@@ -167,60 +175,55 @@ const Admin = () => {
             <Divider sx={{ my: 2 }} />
 
             <List>
-              <ListItem
-                secondaryAction={
-                  <IconButton edge="end">
-                    <MoreVert />
-                  </IconButton>
-                }
-              >
-                <ListItemAvatar>
-                  <Avatar>
-                    <Email />
-                  </Avatar>
-                </ListItemAvatar>
-                <ListItemText
-                  primary="admin@system.com"
-                  secondary={
-                    <Box
-                      sx={{ display: "flex", alignItems: "center", mt: 0.5 }}
-                    >
-                      <Chip
-                        icon={<CheckCircle fontSize="small" />}
-                        label="Active"
-                        size="small"
-                        color="success"
-                        variant="outlined"
-                        sx={{ mr: 1 }}
-                      />
-                      <Chip
-                        label="Profile Complete"
-                        size="small"
-                        color="primary"
-                        variant="outlined"
-                      />
-                    </Box>
+              {allAdminsData?.getAllSystemAdmins.map((admin) => (
+                <ListItem
+                  key={admin.id}
+                  secondaryAction={
+                    <IconButton edge="end">
+                      <MoreVert />
+                    </IconButton>
                   }
-                />
-              </ListItem>
+                >
+                  <ListItemAvatar>
+                    <Avatar>
+                      <Email />
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={admin.email}
+                    secondary={
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", mt: 0.5 }}
+                      >
+                        <Chip
+                          icon={<CheckCircle fontSize="small" />}
+                          label={admin.isActive ? "Active" : "Inactive"}
+                          size="small"
+                          color={admin.isActive ? "success" : "default"}
+                          variant="outlined"
+                          sx={{ mr: 1 }}
+                        />
+                        <Chip
+                          label={admin.role}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                        />
+                      </Box>
+                    }
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    Created: {new Date(admin.createdAt).toLocaleDateString()}
+                  </Typography>
+                </ListItem>
+              ))}
             </List>
-
-            <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-              <Typography variant="caption" color="text.secondary">
-                Created: 1/1/2024
-              </Typography>
-            </Box>
           </Paper>
         </Grid>
       </Grid>
-      {
-        isOpen && (
-          <AddSystemAdminDialog
-            open={isOpen}
-            onClose={() => setIsOpen(false)}
-          />
-        )
-      }
+      {isOpen && (
+        <AddSystemAdminDialog open={isOpen} onClose={() => setIsOpen(false)} />
+      )}
     </Box>
   );
 };

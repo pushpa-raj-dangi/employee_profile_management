@@ -39,19 +39,11 @@ const router = createBrowserRouter([
     children: [
       {
         path: "dashboard",
-        element: (
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        ),
+        element: <Dashboard />,
       },
       {
         path: "employees",
-        element: (
-          <ProtectedRoute>
-            <Employee />
-          </ProtectedRoute>
-        ),
+        element: <Employee />,
       },
       {
         path: "admin",
@@ -63,11 +55,7 @@ const router = createBrowserRouter([
       },
       {
         path: "companies",
-        element: (
-          <ProtectedRoute>
-            <Company />
-          </ProtectedRoute>
-        ),
+        element: <Company />,
       },
       {
         path: "invitations",
@@ -79,19 +67,11 @@ const router = createBrowserRouter([
       },
       {
         path: "profile",
-        element: (
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        ),
+        element: <Profile />,
       },
       {
         path: "profile/:id",
-        element: (
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        ),
+        element: <Profile />,
       },
       {
         path: "companies/:companyId",

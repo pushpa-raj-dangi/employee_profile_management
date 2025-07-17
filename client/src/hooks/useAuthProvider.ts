@@ -58,19 +58,6 @@ export const useAuthProvider = () => {
     };
   }, []);
 
-  useEffect(() => {
-    const checkUser = async () => {
-      try {
-        const meData = await meService(client);
-        if (meData?.me?.user) {
-          setUser(meData.me.user);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    checkUser();
-  }, []);
 
   return {
     user,

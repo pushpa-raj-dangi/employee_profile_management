@@ -1,19 +1,19 @@
-import { Resolver, Query, Mutation, Arg, Authorized, Ctx } from "type-graphql";
-import { Invitation, InvitationStatus } from "../entities/invitation.entity";
-import { prisma } from "../config/prisma";
-import { Role, User } from "../entities/user.entity";
-import { RegisterInput } from "../inputs/register.input";
-import { ProfileInput } from "../inputs/profile.input";
 import { hash } from "bcrypt";
+import { Arg, Authorized, Ctx, Mutation, Query, Resolver } from "type-graphql";
+import { prisma } from "../config/prisma";
+import { Invitation, InvitationStatus } from "../entities/invitation.entity";
+import { Role, User } from "../entities/user.entity";
+import { ProfileInput } from "../inputs/profile.input";
+import { RegisterInput } from "../inputs/register.input";
 import { CustomContext } from "../types";
 
-import { AuthenticationError } from "../errors";
 import { Inject, Service } from "typedi";
-import { InvitationService } from "../services/invitation.service";
-import { TokenValidationResponse } from "../responses/TokenValidationResponse";
-import bcrypt from "bcrypt";
-import { InvitationResponse, SendInvitationInput } from "../inputs/send-invitation.input";
+import {
+  InvitationResponse,
+  SendInvitationInput,
+} from "../inputs/send-invitation.input";
 import { InvitationItemResponse } from "../responses/Invitation";
+import { InvitationService } from "../services/invitation.service";
 
 @Service()
 @Resolver(Invitation)
@@ -31,7 +31,6 @@ export class InvitationResolver {
       ctx.req.session.userId,
       ctx.req.session.role
     );
-
   }
 
   @Mutation(() => User)
@@ -94,53 +93,29 @@ export class InvitationResolver {
 
     return user;
   }
-
+    
   @Authorized([Role.SYSTEM_ADMIN, Role.MANAGER])
-  @Mutation(() => Invitation)
+  @Mutation(() => Boolean)
   async cancelInvitation(@Ctx() ctx: CustomContext, @Arg("id") id: string) {
-    const invitation = await prisma.invitation.findUnique({
-      where: { id },
-    });
-
-    if (!invitation) {
-      throw new Error("Invitation not found");
-    }
-
-    // Verify permission
-    if (
-      ctx.req.session.role === Role.MANAGER &&
-      invitation.invitedById !== ctx.req.session.userId
-    ) {
-      throw new Error("You can only cancel invitations you sent");
-    }
-
-    if (invitation.status !== InvitationStatus.PENDING) {
-      throw new Error("Only pending invitations can be cancelled");
-    }
-
-    return prisma.invitation.update({
-      where: { id },
-      data: {
-        status: InvitationStatus.CANCELLED,
-      },
-    });
+    return await this.invitationService.cancelInvitation(id, ctx.req.session.userId);
   }
 
   @Authorized([Role.SYSTEM_ADMIN, Role.MANAGER])
-  @Mutation(() => Invitation)
+  @Mutation(() => InvitationResponse)
   async sendInvitation(
     @Ctx() ctx: CustomContext,
     @Arg("input") input: SendInvitationInput
-  ) {
-    if (!ctx.req?.session.id || !ctx.req?.session.role) {
-      throw new AuthenticationError("Authentication required");
-    }
-
-    return await this.invitationService.sendInvitation(
+  ): Promise<InvitationResponse> {
+    const result = await this.invitationService.sendInvitation(
       ctx.req.session.userId,
       ctx.req.session.role,
       input
     );
+
+    return {
+      success: true,
+      message: "Invitation sent successfully",
+    };
   }
 
   @Mutation(() => InvitationResponse)
@@ -160,37 +135,5 @@ export class InvitationResolver {
     };
   }
 
-  @Mutation(() => TokenValidationResponse)
-  async validateTempPassword(
-    @Arg("token") token: string,
-    @Arg("password") password: string
-  ): Promise<TokenValidationResponse> {
-    try {
-      const invitation = await prisma.invitation.findUnique({
-        where: { token },
-      });
 
-      if (!invitation) {
-        return new TokenValidationResponse(false, false, "Invalid token");
-      }
-
-      const isPasswordValid = await bcrypt.compare(
-        password,
-        invitation.tempPassword
-      );
-
-      if (!isPasswordValid) {
-        return new TokenValidationResponse(
-          false,
-          false,
-          "Incorrect temporary password"
-        );
-      }
-
-      return new TokenValidationResponse(true, true, "Password is valid");
-    } catch (err) {
-      console.error(err);
-      return new TokenValidationResponse(false, false, "Something went wrong");
-    }
-  }
 }

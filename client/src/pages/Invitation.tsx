@@ -3,6 +3,7 @@ import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import {
   Box,
   Button,
+  CircularProgress,
   Paper,
   Table,
   TableBody,
@@ -16,23 +17,63 @@ import React, { useState } from "react";
 import PageHeader from "../components/PageHeader";
 import PageSubHeader from "../components/PageSubHeader";
 import UserInvitationDialog from "../components/UserInvitationDialog";
-import type { InvitationResponse } from "../types/graphql/invitation";
 import { LIST_INVITATIONS } from "../graphql/queries/invitationQueries";
-import { useQuery } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client";
+import type { InvitationResponse } from "../types/graphql/Invitation";
+import { useSnackbar } from "../hooks/useSnackbar";
+import { CANCEL_INVITATION } from "../graphql/mutations/invitationMutations";
 
 const Invitation = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const {showSnackbar} = useSnackbar();
+  const [id, setId] = useState<string>("");
 
-  const { loading, error, data } = useQuery<{
+  const { loading, error, refetch, data } = useQuery<{
     listInvitations: InvitationResponse[];
-  }>(LIST_INVITATIONS);
+  }>(LIST_INVITATIONS, {
+    fetchPolicy: "network-only",
+  });
 
-  if (loading) return <p>Loading invitations...</p>;
-  if (error) return <p>Error loading invitations: {error.message}</p>;
 
-  if (!data || data.listInvitations.length === 0) {
-    return <p>No invitations found.</p>;
+
+  const [cancelInvitation, { loading:cancelling }] = useMutation(CANCEL_INVITATION, {
+    variables: { id },
+    onCompleted: (data) => {
+      if (data.cancelInvitation) {
+        showSnackbar("Invitation cancelled successfully.", "success");
+      } else {
+        showSnackbar("Failed to cancel invitation.", "error");
+      }
+    },
+    onError: (error) => {
+      showSnackbar(error.message, "error");
+    },
+  });
+
+
+  const handleCancelInvitation = (id: string) => {
+    const confirmation = window.confirm(
+      "Are you sure you want to cancel this invitation? This action cannot be undone."
+    );
+    if (!confirmation) return;
+
+    setId(id);
+
+    cancelInvitation({ variables: { id } });
+    refetch();
   }
+
+
+  
+
+
+  if (loading)
+    return (
+      <Box sx={{ textAlign: "center", p: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  if (error) return <p>Error loading invitations: {error.message}</p>;
 
   return (
     <Box>
@@ -64,7 +105,14 @@ const Invitation = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {data.listInvitations.map((invitation) => (
+                {data?.listInvitations.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center">
+                      <Typography>No invitations found.</Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
+                {data?.listInvitations.map((invitation) => (
                   <React.Fragment key={invitation.id}>
                     <TableRow hover>
                       <TableCell>
@@ -74,13 +122,19 @@ const Invitation = () => {
                       </TableCell>
                       <TableCell>{invitation.role || "-"}</TableCell>
                       <TableCell>{invitation.status || "-"}</TableCell>
-                      <TableCell>{invitation.invitedBy?.fullName || "-"}</TableCell>
                       <TableCell>
-                        <Button
-                          color="error"
-                          startIcon={<NotInterestedIcon />}
-                        ></Button>
+                        {invitation.invitedBy?.fullName || "-"}
                       </TableCell>
+                      {invitation.status === "PENDING" ? (
+                        <TableCell>
+                          <Button
+                          loading={cancelling}
+                            onClick={() => handleCancelInvitation(invitation.id)}
+                            color="error"
+                            startIcon={<NotInterestedIcon />}
+                          ></Button>
+                        </TableCell>
+                      ) : null}
                     </TableRow>
                   </React.Fragment>
                 ))}

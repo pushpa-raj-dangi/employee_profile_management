@@ -40,7 +40,7 @@ const NAVIGATION: CustomNavigation = [
     visibleTo: [Role.SYSTEM_ADMIN, Role.MANAGER],
     icon: <PeopleIcon />,
   },
-  
+
   {
     segment: "companies",
     title: "Companies",
@@ -93,7 +93,6 @@ export default function AuthLayout(props: DemoProps) {
             email: user?.email || "",
             name: user?.role || "",
             image: user?.profile?.profileImage || user?.email || "",
-
           },
         });
       },
@@ -103,7 +102,14 @@ export default function AuthLayout(props: DemoProps) {
         navigate("/login");
       },
     };
-  }, [logout, navigate, user?.email, user?.id, user?.role,user?.profile?.profileImage]);
+  }, [
+    logout,
+    navigate,
+    user?.email,
+    user?.id,
+    user?.role,
+    user?.profile?.profileImage,
+  ]);
 
   useEffect(() => {
     if (isAuthenticated && user) {

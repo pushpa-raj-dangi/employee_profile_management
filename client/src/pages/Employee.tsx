@@ -152,10 +152,10 @@ const Employee: FC = () => {
                   data?.listEmployees.data.map((employee) => (
                     <TableRow hover key={employee.id}>
                       <TableCell>
-                        {employee.profile?.firstName || '-'}
+                        {employee.profile?.firstName || "-"}
                         {employee.profile?.lastName}
                       </TableCell>
-                      <TableCell>{employee.email || '-'}</TableCell>
+                      <TableCell>{employee.email || "-"}</TableCell>
                       <TableCell>
                         {employee.isActive ? (
                           <Box display="flex" alignItems="center">
@@ -173,11 +173,9 @@ const Employee: FC = () => {
                         {/* Placeholder for action buttons */}
                         <IconButton size="small">
                           {/* Add edit icon here */}
-                          <Link
-                          to={`/profile/${employee.id}`}
-                          >
-                          <Edit
-                          /></Link>
+                          <Link to={`/profile/${employee.id}`}>
+                            <Edit />
+                          </Link>
                         </IconButton>
                       </TableCell>
                     </TableRow>
@@ -200,11 +198,7 @@ const Employee: FC = () => {
           />
         </Paper>
       </Box>
-      {
-        open && (
-          <AddEmployeeDialog open={open} onClose={() => setOpen(false)} />
-        )
-      }
+      {open && <AddEmployeeDialog open={open} onClose={() => setOpen(false)} />}
     </Box>
   );
 };

@@ -8,7 +8,7 @@ import {
   DialogTitle,
   FormControl,
   TextField,
-  Typography
+  Typography,
 } from "@mui/material";
 import { useSnackbar } from "../hooks/useSnackbar";
 import { useErrorHandler } from "../utils/handleApolloError";
@@ -17,8 +17,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { SEND_INVITE_TO_ADMIN_MUTATION } from "../graphql/mutations/sendInviteMutations";
 import { Role } from "../utils/permissions";
+import { SEND_INVITE_TO_ADMIN_MUTATION } from "../graphql/mutations/invitationMutations";
 
 type AddSystemAdminDialogProps = {
   open: boolean;
@@ -35,7 +35,9 @@ const AddSystemAdminDialog = ({ open, onClose }: AddSystemAdminDialogProps) => {
   const { handleGraphQLError } = useErrorHandler();
   const { showSnackbar } = useSnackbar();
 
-  const [sendInvitation, { loading }] = useMutation(SEND_INVITE_TO_ADMIN_MUTATION);
+  const [sendInvitation, { loading }] = useMutation(
+    SEND_INVITE_TO_ADMIN_MUTATION
+  );
 
   const {
     control,
@@ -122,9 +124,12 @@ const AddSystemAdminDialog = ({ open, onClose }: AddSystemAdminDialogProps) => {
         >
           Cancel
         </Button>
-        <Button onClick={handleSubmit(onSubmit)} variant="contained"
-        loading={loading}
-        disabled={loading}>
+        <Button
+          onClick={handleSubmit(onSubmit)}
+          variant="contained"
+          loading={loading}
+          disabled={loading}
+        >
           Invite Now
         </Button>
       </DialogActions>

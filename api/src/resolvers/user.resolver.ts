@@ -45,9 +45,6 @@ export class UserResolver {
     @Arg("skip", () => Int, { defaultValue: 0 }) skip?: number,
     @Arg("take", () => Int, { defaultValue: 20 }) take?: number
   ): Promise<PaginatedEmployees> {
-    if (!ctx.req?.session.userId || !ctx.req?.session.role) {
-      throw new Error("Authentication required");
-    }
 
     return await this.userService.listEmployees(
       ctx.req.session.userId,

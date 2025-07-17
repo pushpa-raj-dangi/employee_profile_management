@@ -47,7 +47,10 @@ const profileSetupSchema = z
     lastName: z.string({
       message: "Last Name Required",
     }),
-    postalCode: z.string().optional(),
+    postalCode: z.string()
+    .min(3, "Postal code must be at least 3 characters")
+    .max(7, "Postal code must not exceed 7 characters")
+    .optional(),
     phoneNumber: z.string().optional(),
     address: z.string().optional(),
     birthday: z.string().optional()

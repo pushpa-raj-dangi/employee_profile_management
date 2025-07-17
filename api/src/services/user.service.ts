@@ -10,8 +10,6 @@ import { ProfileInput } from "../inputs/profile.input";
 
 @Service()
 export class UserService {
-  
-
   async updateProfile(currentUserId: string, input: ProfileInput) {
     try {
       return await prisma.$transaction(async (prisma) => {
@@ -194,13 +192,35 @@ export class UserService {
       : {};
 
     const whereClause: Prisma.CompanyUserWhereInput = {
-      ...searchFilter,
       ...(filterCompanyIds && {
         companyId: { in: filterCompanyIds },
-        user: { role: Role.GENERAL_EMPLOYEE },
       }),
+      OR: searchTerm
+        ? [
+            { user: { email: { contains: searchTerm, mode: "insensitive" } } },
+            {
+              user: {
+                profile: {
+                  firstName: { contains: searchTerm, mode: "insensitive" },
+                },
+              },
+            },
+            {
+              user: {
+                profile: {
+                  lastName: { contains: searchTerm, mode: "insensitive" },
+                },
+              },
+            },
+            {
+              company: { name: { contains: searchTerm, mode: "insensitive" } },
+            },
+          ]
+        : undefined,
+      user: {
+        role: Role.GENERAL_EMPLOYEE,
+      },
     };
-
     const [companyUsers, totalCount] = await Promise.all([
       prisma.companyUser.findMany({
         where: whereClause,
