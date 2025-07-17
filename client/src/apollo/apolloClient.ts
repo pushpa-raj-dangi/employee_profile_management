@@ -6,8 +6,10 @@ import {
 } from "@apollo/client";
 import { onError } from "@apollo/client/link/error";
 
+const apiURL = process.env.REACT_APP_API_URL || "http://localhost:4000";
+
 const httpLink = createHttpLink({
-  uri: '/graphql',
+  uri: `${apiURL}/graphql`,
   credentials: "include",
 });
 

@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/5110616f-47b0-426b-9e4e-1b155ed4f434/resourceGroups/employeemanagement_group/providers/Microsoft.Web/sites/emp-api25",
+    "appService.deploySubpath": "api"
+}
