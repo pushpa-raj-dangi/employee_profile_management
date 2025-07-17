@@ -1,22 +1,17 @@
-import { AuthenticationError, ForbiddenError, UserInputError, ValidationError } from "apollo-server-express";
 import {
   Arg,
-  AuthorizationError,
   Authorized,
   Ctx,
   Int,
   Mutation,
   Query,
-  Resolver,
+  Resolver
 } from "type-graphql";
 import { Inject, Service } from "typedi";
-import { Invitation } from "../entities/invitation.entity";
 import { ProfileObject } from "../entities/objects/profileObject";
 import { PaginatedEmployees } from "../entities/paginatedEmployee.entity";
 import { Role, User } from "../entities/user.entity";
 import { ProfileInput } from "../inputs/profile.input";
-import { RegisterInput } from "../inputs/register.input";
-import { InvitationResponse, SendInvitationInput } from "../inputs/send-invitation.input";
 import { UserService } from "../services/user.service";
 import { CustomContext } from "../types";
 

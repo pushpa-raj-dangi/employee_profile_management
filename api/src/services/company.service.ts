@@ -1,12 +1,12 @@
+import { GraphQLError } from "graphql";
 import { Service } from "typedi";
 import { prisma } from "../config/prisma";
+import { CompanyDTO } from "../entities/dtos/company/companyDto";
+import { Role } from "../entities/user.entity";
 import { CreateCompanyInput } from "../inputs/create-company.input";
 import { UpdateCompanyInput } from "../inputs/update-company.Input";
 import { CustomContext } from "../types";
-import { GraphQLError } from "graphql";
-import { Role } from "../entities/user.entity";
 import { isSystemAdmin } from "../utils/permission";
-import { CompanyDTO } from "../entities/DTOS/company/companyDto";
 
 @Service()
 export class CompanyService {

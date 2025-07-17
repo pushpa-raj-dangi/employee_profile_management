@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client";
 import { AuthenticationError } from "apollo-server-express";
 import { Service } from "typedi";
 import { prisma } from "../config/prisma";
-import { EmployeeDTO } from "../entities/DTOS/employees/employeeDto";
+import { EmployeeDTO } from "../entities/dtos/employees/employeeDto";
 import { ProfileObject } from "../entities/objects/profileObject";
 import { Role } from "../entities/user.entity";
 import { AuthorizationError, NotFoundError, ValidationError } from "../errors";

@@ -1,5 +1,5 @@
 import { Field, Int, ObjectType } from "type-graphql";
-import { EmployeeDTO } from "./DTOS/employees/employeeDto";
+import { EmployeeDTO } from "./dtos/employees/employeeDto";
 
 @ObjectType()
 export class PaginatedEmployees {
