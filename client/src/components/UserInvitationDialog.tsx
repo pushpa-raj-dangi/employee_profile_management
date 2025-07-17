@@ -44,7 +44,7 @@ const UserInvitationDialog = ({ open, onClose }: UserInvitationDialogProps) => {
       ? allRoles.filter((r) => r !== Role.SYSTEM_ADMIN)
       : allRoles;
 
-  const [sendInvitation] = useMutation(SEND_INVITATION_MUTATION);
+  const [sendInvitation,{ loading }] = useMutation(SEND_INVITATION_MUTATION);
 
   const handleSubmit = async () => {
     const result = invitationSchema.safeParse({
@@ -159,7 +159,9 @@ const UserInvitationDialog = ({ open, onClose }: UserInvitationDialogProps) => {
 
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSubmit} variant="contained">
+        <Button onClick={handleSubmit}
+        loading={loading}
+        variant="contained">
           Send Invitation
         </Button>
       </DialogActions>
