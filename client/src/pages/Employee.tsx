@@ -1,4 +1,4 @@
-import { PeopleAlt } from "@mui/icons-material";
+import { Edit, PeopleAlt } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import SearchIcon from "@mui/icons-material/Search";
 import {
@@ -24,6 +24,7 @@ import { useEffect, useState, type FC } from "react";
 import { useQuery } from "@apollo/client";
 import { LIST_EMPLOYEES } from "../graphql/queries/employeeQueries";
 import type { User } from "../types/graphql/User";
+import { Link } from "react-router";
 
 interface ListEmployeesResponse {
   listEmployees: {
@@ -172,6 +173,11 @@ const Employee: FC = () => {
                         {/* Placeholder for action buttons */}
                         <IconButton size="small">
                           {/* Add edit icon here */}
+                          <Link
+                          to={`/profile/${employee.id}`}
+                          >
+                          <Edit
+                          /></Link>
                         </IconButton>
                       </TableCell>
                     </TableRow>

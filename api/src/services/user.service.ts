@@ -3,187 +3,147 @@ import { AuthenticationError } from "apollo-server-express";
 import { Service } from "typedi";
 import { prisma } from "../config/prisma";
 import { EmployeeDTO } from "../entities/DTOS/employees/employeeDto";
-import { InvitationStatus } from "../entities/invitation.entity";
+import { ProfileObject } from "../entities/objects/profileObject";
 import { Role } from "../entities/user.entity";
 import { AuthorizationError, NotFoundError, ValidationError } from "../errors";
 import { ProfileInput } from "../inputs/profile.input";
-import { RegisterInput } from "../inputs/register.input";
-import { SendInvitationInput } from "../inputs/send-invitation.input";
-import { generateToken, hashPassword } from "../utils/auth/auth";
-import { sendEmail } from "../utils/email";
-import { ProfileObject } from "../entities/objects/profileObject";
 
 @Service()
 export class UserService {
-  async createUser(input: RegisterInput, role: Role) {
-    return await prisma.$transaction(async (prisma) => {
-      if (!input.email || !input.password) {
-        throw new ValidationError("Email and password are required");
-      }
+  
 
-      const existingUser = await prisma.user.findUnique({
-        where: { email: input.email },
-      });
+  async updateProfile(currentUserId: string, input: ProfileInput) {
+    try {
+      return await prisma.$transaction(async (prisma) => {
+        try {
+          // Input validation
+          if (!currentUserId) {
+            throw new AuthenticationError("User is not authenticated");
+          }
 
-      if (existingUser) {
-        throw new ValidationError("User with this email already exists");
-      }
+          if (!input.firstName || !input.lastName) {
+            throw new ValidationError("First name and last name are required");
+          }
 
-      const hashedPassword = await hashPassword(input.password);
+          // Fetch current user with companies
+          const currentUser = await prisma.user.findUnique({
+            where: { id: currentUserId },
+            include: { companies: true },
+          });
 
-      return prisma.user.create({
-        data: {
-          email: input.email,
-          password: hashedPassword,
-          role,
-        },
-      });
-    });
-  }
+          if (!currentUser) {
+            throw new NotFoundError("Current user not found");
+          }
 
-  async updateProfile(userId: string, input: ProfileInput) {
-    return await prisma.$transaction(async (prisma) => {
-      if (!userId) {
-        throw new AuthenticationError("User ID is required");
-      }
+          // Fetch target user with profile
+          const targetUser = await prisma.user.findUnique({
+            where: { id: input.userId },
+            include: {
+              companies: true,
+              profile: true,
+            },
+          });
 
-      if (!input.firstName || !input.lastName) {
-        throw new ValidationError("First name and last name are required");
-      }
+          if (!targetUser) {
+            throw new NotFoundError("Target user not found");
+          }
 
-      // Fetch current logged-in user
-      const currentUser = await prisma.user.findUnique({
-        where: { id: userId },
-        include: { profile: true, companies: true },
-      });
+          // Authorization checks (unchanged)
+          const isSelfUpdate = currentUserId === input.userId;
+          if (currentUser.role === "GENERAL_EMPLOYEE" && !isSelfUpdate) {
+            throw new AuthorizationError(
+              "General employees can only update their own profile."
+            );
+          }
 
-      if (!currentUser) {
-        throw new NotFoundError("Current user not found");
-      }
+          if (
+            currentUser.role === "MANAGER" &&
+            !isSelfUpdate &&
+            currentUser.companies.length === 0
+          ) {
+            throw new AuthorizationError(
+              "Managers must belong to a company to update others' profiles."
+            );
+          }
 
-      // Fetch the target profile's user (the one to be updated)
-      const targetUser = await prisma.user.findUnique({
-        where: { id: input.userId },
-      });
+          if (
+            currentUser.role === "MANAGER" &&
+            !isSelfUpdate &&
+            !this.shareSameCompany(currentUser.companies, targetUser.companies)
+          ) {
+            throw new AuthorizationError(
+              "Managers can only update profiles within their own company."
+            );
+          }
 
-      if (!targetUser) {
-        throw new NotFoundError("Target user not found");
-      }
+          // Prepare profile data
+          const {
+            userId: _discardUserId,
+            id: _discardId,
+            ...profileData
+          } = input;
+          const { employeeNumber, ...restProfileData } = profileData;
 
-      // Authorization logic
-      if (currentUser.role === "GENERAL_EMPLOYEE" && userId !== input.userId) {
-        throw new AuthorizationError(
-          "General employees can only update their own profiles."
-        );
-      }
+          // Only validate employeeNumber if it's being changed
+          if (
+            employeeNumber &&
+            employeeNumber !== targetUser.profile?.employeeNumber
+          ) {
+            const duplicate = await prisma.profile.findFirst({
+              where: {
+                employeeNumber,
+                userId: { not: input.userId },
+              },
+            });
 
-      if (
-        currentUser.role === "MANAGER" &&
-        currentUser.companies.every((c) => !c.companyId)
-      ) {
-        throw new AuthorizationError(
-          "Managers can only update profiles within their own company."
-        );
-      }
+            if (duplicate) {
+              throw new ValidationError("Employee number already exists.");
+            }
+          }
 
-      // Find or create profile
-      const profile = await prisma.profile.findUnique({
-        where: { userId: input.userId },
-      });
+          // Prepare update data - don't include employeeNumber if it's not changing
+          const updateData = {
+            ...restProfileData,
+            ...(employeeNumber &&
+            employeeNumber !== targetUser.profile?.employeeNumber
+              ? { employeeNumber }
+              : {}),
+          };
 
-      return prisma.user.update({
-        where: { id: input.userId },
-        data: {
-          profile: profile ? { update: input } : { create: input },
-        },
-        include: { profile: true },
-      });
-    });
-  }
-
-  async sendInvitation(
-    invitedById: string,
-    inviterRole: Role,
-    input: SendInvitationInput
-  ) {
-    return await prisma.$transaction(async (prisma) => {
-      const { email, role, companyId } = input;
-      console.log(
-        "Inviting user:",
-        invitedById,
-        email,
-        "Role:",
-        role,
-        "Company ID:",
-        companyId
-      );
-
-      if (!email || !role || !companyId) {
-        throw new ValidationError("Email, role and company ID are required");
-      }
-
-      if (inviterRole === Role.MANAGER) {
-        const companyUser = await prisma.companyUser.findFirst({
-          where: { companyId, userId: invitedById },
-        });
-
-        if (!companyUser) {
-          throw new AuthorizationError(
-            "You don't have permission to invite to this company"
-          );
+          // Execute the update or create
+          if (targetUser.profile) {
+            return await prisma.user.update({
+              where: { id: input.userId },
+              data: {
+                profile: {
+                  update: updateData,
+                },
+              },
+              include: { profile: true },
+            });
+          } else {
+            return await prisma.user.update({
+              where: { id: input.userId },
+              data: {
+                profile: {
+                  create: {
+                    employeeNumber: employeeNumber || null,
+                    ...restProfileData,
+                  },
+                },
+              },
+              include: { profile: true },
+            });
+          }
+        } catch (error) {
+          console.error("Error during profile update transaction:", error);
+          throw error;
         }
-      }
-
-      const existingInvitation = await prisma.invitation.findFirst({
-        where: {
-          email,
-          status: InvitationStatus.PENDING,
-          expiresAt: { gt: new Date() },
-        },
       });
-
-      if (existingInvitation) {
-        throw new ValidationError(
-          "Pending invitation already exists for this email"
-        );
-      }
-
-      const token = generateToken();
-      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-
-      const tempPassword = generateToken().substring(0, 12);
-
-      const invitation = await prisma.invitation.create({
-        data: {
-          email,
-          role: role as Role,
-          token,
-          expiresAt,
-          status: InvitationStatus.PENDING,
-          invitedById,
-          companyId,
-          tempPassword: await hashPassword(tempPassword),
-        },
-      });
-
-      console.log(`${process.env.FRONTEND_URL}/register?token=${token}`);
-      try {
-        await sendEmail({
-          to: email,
-          subject: "Invitation to Employee Management System",
-          text: `
-          
-          You've been invited to join our system.
-          Temporary password: ${tempPassword} 
-          Click here: ${process.env.FRONTEND_URL}/register?token=${token}`,
-        });
-      } catch (e) {
-        console.error("Failed to send email", e);
-        throw new Error("Failed to send invitation email");
-      }
-
-      return invitation;
-    });
+    } catch (error) {
+      console.error("Profile update failed:", error);
+      throw error;
+    }
   }
 
   async listEmployees(
@@ -316,7 +276,7 @@ export class UserService {
                 employeeNumber: true,
                 id: true,
                 remarks: true,
-                zipCode: true,
+                postalCode: true,
               },
             },
           },
@@ -342,7 +302,69 @@ export class UserService {
       department: employee.user.profile?.department || "",
       employeeNumber: employee.user.profile?.employeeNumber || "",
       remarks: employee.user.profile?.remarks || "",
-      zipCode: employee.user.profile?.zipCode || "",
+      postalCode: employee.user.profile?.postalCode || "",
     };
+  }
+
+  async getProfileByUserId(userId: string): Promise<ProfileObject> {
+    if (!userId) {
+      throw new AuthenticationError("User ID is required");
+    }
+
+    // Fetch user with profile info by userId
+    const userWithProfile = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        profile: {
+          select: {
+            firstName: true,
+            lastName: true,
+            address: true,
+            birthday: true,
+            phoneNumber: true,
+            profileImage: true,
+            department: true,
+            employeeNumber: true,
+            remarks: true,
+            postalCode: true,
+            id: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+      },
+    });
+
+    if (!userWithProfile) {
+      throw new NotFoundError("User not found");
+    }
+
+    if (!userWithProfile.profile) {
+      return null;
+    }
+
+    // Map to your ProfileObject return type
+    return {
+      id: userWithProfile.id,
+      firstName: userWithProfile.profile.firstName,
+      lastName: userWithProfile.profile.lastName,
+      address: userWithProfile.profile.address,
+      birthday: userWithProfile.profile.birthday,
+      phoneNumber: userWithProfile.profile.phoneNumber,
+      profileImage: userWithProfile.profile.profileImage,
+      department: userWithProfile.profile.department,
+      employeeNumber: userWithProfile.profile.employeeNumber,
+      remarks: userWithProfile.profile.remarks,
+      postalCode: userWithProfile.profile.postalCode,
+    };
+  }
+  private shareSameCompany(
+    userCompanies: { companyId: string }[],
+    targetCompanies: { companyId: string }[]
+  ): boolean {
+    const companySet = new Set(userCompanies.map((c) => c.companyId));
+    return targetCompanies.some((c) => companySet.has(c.companyId));
   }
 }

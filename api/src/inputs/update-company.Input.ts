@@ -9,7 +9,7 @@ export class UpdateCompanyInput {
   name?: string;
 
   @Field({ nullable: true })
-  zipCode?: string;
+  postalCode?: string;
 
   @Field({ nullable: true })
   address?: string;

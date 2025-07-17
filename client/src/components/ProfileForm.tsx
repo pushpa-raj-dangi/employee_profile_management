@@ -1,30 +1,29 @@
-import React, { useEffect } from "react";
 import { useMutation } from "@apollo/client";
-import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import React, { useEffect } from "react";
+import { Controller, useForm } from "react-hook-form";
 
+import { CloudUpload } from "@mui/icons-material";
 import {
-  Box,
-  Typography,
-  TextField,
-  Divider,
-  Button,
-  Paper,
-  Grid,
-  Snackbar,
-  Alert,
-  CircularProgress,
   Avatar,
+  Box,
+  Button,
+  CircularProgress,
+  Divider,
+  Grid,
   IconButton,
+  Paper,
+  TextField,
+  Typography,
 } from "@mui/material";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { CloudUpload } from "@mui/icons-material";
-import { profileSchema, type ProfileFormData } from "../schemas/schema";
-import { useAuth } from "../hooks/useAuth";
-import { UPDATE_PROFILE_MUTATION } from "../graphql/mutations/userMutations";
 import { useNavigate } from "react-router";
+import { UPDATE_PROFILE_MUTATION } from "../graphql/mutations/userMutations";
+import { useAuth } from "../hooks/useAuth";
+import { profileSchema, type ProfileFormData } from "../schemas/schema";
+import { useSnackbar } from "../hooks/useSnackbar";
 
 interface EmployeeProfileFormProps {
   initialData?: ProfileFormData;
@@ -34,6 +33,7 @@ const EmployeeProfileForm: React.FC<EmployeeProfileFormProps> = ({
   initialData,
 }) => {
   const { user } = useAuth();
+  const { showSnackbar } = useSnackbar();
   const [updateProfile, { loading, error }] = useMutation(
     UPDATE_PROFILE_MUTATION
   );
@@ -43,7 +43,7 @@ const EmployeeProfileForm: React.FC<EmployeeProfileFormProps> = ({
   const {
     control,
     handleSubmit,
-    formState: { errors, isDirty },
+    formState: { errors },
     reset,
     setValue,
     watch,
@@ -54,16 +54,16 @@ const EmployeeProfileForm: React.FC<EmployeeProfileFormProps> = ({
       department: "",
       firstName: "",
       lastName: "",
-      zipCode: "",
+      postalCode: "",
       address: "",
       phoneNumber: "",
       birthday: new Date(),
       remarks: "",
       profileImage: "",
+      userId: user?.id || "",
     },
   });
 
-  const [successMessage, setSuccessMessage] = React.useState("");
   const profileImage = watch("profileImage");
 
   useEffect(() => {
@@ -87,11 +87,12 @@ const EmployeeProfileForm: React.FC<EmployeeProfileFormProps> = ({
           },
         },
       });
-      setSuccessMessage("Profile updated successfully");
+      showSnackbar("Profile updated successfully", "success");
       reset(data);
       navigate("/profile");
     } catch (err) {
       console.error("Profile update error:", err);
+      showSnackbar(`Error updating profile: ${error!["message"]}`, "error");
     }
   };
 
@@ -105,10 +106,6 @@ const EmployeeProfileForm: React.FC<EmployeeProfileFormProps> = ({
       };
       reader.readAsDataURL(file);
     }
-  };
-
-  const handleCloseSnackbar = () => {
-    setSuccessMessage("");
   };
 
   return (
@@ -177,50 +174,18 @@ const EmployeeProfileForm: React.FC<EmployeeProfileFormProps> = ({
             Account Information
           </Typography>
           <Divider sx={{ mb: 2 }} />
-
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid
-              size={{
-                xs: 12,
-                md: 6,
-              }}
-            >
-              <TextField
-                fullWidth
-                label="Email Address"
-                variant="outlined"
-                margin="normal"
-                value={user?.email || ""}
-                InputProps={{
-                  readOnly: true,
-                }}
-              />
-            </Grid>
-            <Grid
-              size={{
-                xs: 12,
-                md: 6,
-              }}
-            >
-              <TextField
-                fullWidth
-                label="Role"
-                variant="outlined"
-                margin="normal"
-                value={user?.role || ""}
-                InputProps={{
-                  readOnly: true,
-                }}
-              />
-            </Grid>
-          </Grid>
+          <Controller
+            name="userId"
+            control={control}
+            render={({ field }) => <input {...field} type="hidden" />}
+          />
 
           <Typography
             variant="subtitle1"
             gutterBottom
             sx={{ fontWeight: "bold", mt: 2 }}
           >
-            Employee Details
+            Profile Details
           </Typography>
           <Divider sx={{ mb: 2 }} />
 
@@ -320,7 +285,7 @@ const EmployeeProfileForm: React.FC<EmployeeProfileFormProps> = ({
               }}
             >
               <Controller
-                name="zipCode"
+                name="postalCode"
                 control={control}
                 render={({ field }) => (
                   <TextField
@@ -329,9 +294,9 @@ const EmployeeProfileForm: React.FC<EmployeeProfileFormProps> = ({
                     label="Zip Code *"
                     variant="outlined"
                     margin="normal"
-                    error={!!errors.zipCode}
-                    helperText={errors.zipCode?.message}
-                    inputProps={{ maxLength: 4 }}
+                    error={!!errors.postalCode}
+                    helperText={errors.postalCode?.message}
+                    inputProps={{ maxLength: 7 }}
                   />
                 )}
               />
@@ -429,7 +394,7 @@ const EmployeeProfileForm: React.FC<EmployeeProfileFormProps> = ({
               type="submit"
               variant="contained"
               color="primary"
-              disabled={loading || !isDirty}
+              disabled={loading}
               startIcon={loading ? <CircularProgress size={20} /> : null}
             >
               {loading ? "Saving..." : "Save Changes"}
@@ -437,22 +402,6 @@ const EmployeeProfileForm: React.FC<EmployeeProfileFormProps> = ({
           </Box>
         </Paper>
       </Box>
-
-      <Snackbar
-        open={!!successMessage}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-      >
-        <Alert onClose={handleCloseSnackbar} severity="success">
-          {successMessage}
-        </Alert>
-      </Snackbar>
-
-      <Snackbar open={!!error} autoHideDuration={6000} onClose={() => {}}>
-        <Alert severity="error">
-          {error?.message || "Failed to update profile"}
-        </Alert>
-      </Snackbar>
     </LocalizationProvider>
   );
 };

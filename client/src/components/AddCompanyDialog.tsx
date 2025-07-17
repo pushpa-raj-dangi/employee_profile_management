@@ -41,7 +41,7 @@ const AddCompanyDialog = ({
     mode: "onChange",
     defaultValues: {
       name: "",
-      zipCode: "",
+      postalCode: "",
       address: "",
       phoneNumber: "",
       email: "",
@@ -95,13 +95,13 @@ const AddCompanyDialog = ({
                 }}
               >
                 <TextField
-                  {...register("zipCode")}
+                  {...register("postalCode")}
                   label="Postal Code"
                   fullWidth
                   variant="filled"
                   required
-                  error={!!errors.zipCode}
-                  helperText={errors.zipCode?.message}
+                  error={!!errors.postalCode}
+                  helperText={errors.postalCode?.message}
                 />
               </Grid>
               <Grid

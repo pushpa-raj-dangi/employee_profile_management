@@ -4,7 +4,7 @@ export interface Profile {
   department: string;
   firstName: string;
   lastName: string;
-  zipCode: string;
+  postalCode: string;
   address: string;
   phoneNumber: string;
   birthday: string;

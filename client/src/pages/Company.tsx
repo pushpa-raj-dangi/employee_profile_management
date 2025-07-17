@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@apollo/client";
-import { Factory } from "@mui/icons-material";
-import InfoIcon from "@mui/icons-material/Info";
+import { Factory, Visibility } from "@mui/icons-material";
+import EditIcon from '@mui/icons-material/Edit';
 import {
   Alert,
   Box,
@@ -16,7 +16,7 @@ import {
   Tooltip,
   Typography
 } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import AddCompanyDialog from "../components/AddCompanyDialog";
 import PageHeader from "../components/PageHeader";
 import PageSubHeader from "../components/PageSubHeader";
@@ -33,7 +33,7 @@ const Company = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { showSnackbar } = useSnackbar();
 
-  const [createCompany, { loading: creating, error: createError }] =
+    const [createCompany, { loading: creating }] =
     useMutation<
       {
         createCompany: CompanyDTO;
@@ -59,12 +59,7 @@ const Company = () => {
     }
   };
 
-  useEffect(() => {
-    if (createError) {
-      showSnackbar(`Error creating company: ${createError.message}`, "error");
-    }
-  }, [createError, showSnackbar]);
-
+  console.log("Companies data:", data);
 
   if (creating) return <CircularProgress />;
 
@@ -125,9 +120,15 @@ const Company = () => {
                       <TableCell>
                         <Tooltip title="Details">
                           <IconButton size="small">
-                            <InfoIcon color="info" />
+                            <EditIcon />
                           </IconButton>
                         </Tooltip>
+                        <IconButton
+                          size="small"
+                          onClick={() => setIsOpen(true)}
+                          >
+                            <Visibility />
+                          </IconButton>
                       </TableCell>
                     </TableRow>
                   </React.Fragment>
@@ -142,6 +143,7 @@ const Company = () => {
         open={isOpen}
         onClose={() => setIsOpen(false)}
       />
+
     </Box>
   );
 };

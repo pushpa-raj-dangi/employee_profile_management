@@ -1,6 +1,7 @@
-import { AuthenticationError } from "apollo-server-express";
+import { AuthenticationError, ForbiddenError, UserInputError, ValidationError } from "apollo-server-express";
 import {
   Arg,
+  AuthorizationError,
   Authorized,
   Ctx,
   Int,
@@ -15,7 +16,7 @@ import { PaginatedEmployees } from "../entities/paginatedEmployee.entity";
 import { Role, User } from "../entities/user.entity";
 import { ProfileInput } from "../inputs/profile.input";
 import { RegisterInput } from "../inputs/register.input";
-import { SendInvitationInput } from "../inputs/send-invitation.input";
+import { InvitationResponse, SendInvitationInput } from "../inputs/send-invitation.input";
 import { UserService } from "../services/user.service";
 import { CustomContext } from "../types";
 
@@ -26,20 +27,7 @@ export class UserResolver {
     @Inject(() => UserService) private readonly userService: UserService
   ) {}
 
-  @Authorized(Role.SYSTEM_ADMIN)
-  @Mutation(() => User)
-  async createSystemAdmin(@Arg("input") input: RegisterInput) {
-    return await this.userService.createUser(input, Role.SYSTEM_ADMIN);
-  }
-
-  @Mutation(() => User)
-  async createUser(
-    @Arg("input") input: RegisterInput,
-    @Arg("role", () => Role) role: Role
-  ) {
-    return await this.userService.createUser(input, role);
-  }
-
+  
   @Authorized()
   @Mutation(() => User)
   async updateProfile(
@@ -47,23 +35,6 @@ export class UserResolver {
     @Arg("input") input: ProfileInput
   ) {
     return await this.userService.updateProfile(ctx.req.session.userId, input);
-  }
-
-  @Authorized([Role.SYSTEM_ADMIN, Role.MANAGER])
-  @Mutation(() => Invitation)
-  async sendInvitation(
-    @Ctx() ctx: CustomContext,
-    @Arg("input") input: SendInvitationInput
-  ) {
-    if (!ctx.req?.session.id || !ctx.req?.session.role) {
-      throw new AuthenticationError("Authentication required");
-    }
-
-    return await this.userService.sendInvitation(
-      ctx.req.session.userId,
-      ctx.req.session.role,
-      input
-    );
   }
 
   @Query(() => PaginatedEmployees)
@@ -99,5 +70,11 @@ export class UserResolver {
       employeeId
     );
   }
+
+  @Query(() => ProfileObject, { nullable: true })
+  async getProfile(@Arg("userId") userId: string) {
+    return await this.userService.getProfileByUserId(userId);
+  }
+
 
 }

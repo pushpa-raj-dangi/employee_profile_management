@@ -19,7 +19,7 @@ export class Profile {
   lastName!: string;
 
   @Field()
-  zipCode!: string;
+  postalCode!: string;
 
   @Field()
   address!: string;

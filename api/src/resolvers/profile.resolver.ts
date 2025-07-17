@@ -4,8 +4,10 @@ import { prisma } from "../config/prisma";
 import { Profile } from "../entities/profile.entity";
 import { Role } from "../entities";
 import { CustomContext } from "../types";
+import { Service } from "typedi";
 
-@Resolver(Profile)
+@Service()
+@Resolver()
 export class ProfileResolver {
   @Authorized()
   @Mutation(() => Profile)
@@ -104,4 +106,7 @@ export class ProfileResolver {
       where: { userId: targetUserId },
     });
   }
+
+
+  
 }

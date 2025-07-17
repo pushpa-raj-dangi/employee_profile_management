@@ -1,39 +1,25 @@
-import React, { useState } from "react";
-import { useMutation } from '@apollo/client';
-import { gql } from '@apollo/client';
+import { useMutation } from "@apollo/client";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  Stepper,
-  Step,
-  StepLabel,
-  Button,
-  Typography,
-  TextField,
+  Alert,
   Box,
-  Paper,
+  Button,
+  CircularProgress,
   FormControl,
   FormLabel,
   Grid,
-  Alert,
-  CircularProgress,
+  Paper,
+  Step,
+  StepLabel,
+  Stepper,
+  TextField,
+  Typography,
 } from "@mui/material";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
-
-const COMPLETE_REGISTRATION = gql`
-  mutation CompleteRegistration(
-    $token: String!
-    $registerInput: RegisterInput!
-    $profileInput: ProfileInput!
-  ) {
-    completeRegistration(
-      token: $token
-      registerInput: $registerInput
-      profileInput: $profileInput
-    )
-  }
-`;
+import { z } from "zod";
+import { COMPLETE_REGISTRATION } from "../graphql/mutations/authMutations";
 
 const accountVerificationSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -55,12 +41,16 @@ const profileSetupSchema = z
       .string()
       .min(3, "Employee number must be at least 3 characters"),
     department: z.string().optional(),
-    fullName: z.string().min(2, "Full name must be at least 2 characters"),
+    firstName: z.string({
+      message: "First Name Required",
+    }),
+    lastName: z.string({
+      message: "Last Name Required",
+    }),
     postalCode: z.string().optional(),
     phoneNumber: z.string().optional(),
     address: z.string().optional(),
-    birthday: z.string().optional(),
-    notes: z.string().optional(),
+    birthday: z.string().optional()
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
     message: "Passwords don't match",
@@ -80,17 +70,24 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ token }) => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const [completeRegistration, { loading }] = useMutation(COMPLETE_REGISTRATION, {
-    onCompleted: () => {
-      setActiveStep(2);
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 2000);
-    },
-    onError: (error) => {
-      setError(error.message);
-    },
-  });
+  const [completeRegistration, { loading }] = useMutation(
+    COMPLETE_REGISTRATION,
+    {
+      onCompleted: (data) => {
+        if (data?.completeRegistration?.success) {
+          setActiveStep(2);
+          
+        } else {
+          setError(
+            data?.completeRegistration?.message || "Registration failed"
+          );
+        }
+      },
+      onError: (error) => {
+        setError(error.message);
+      },
+    }
+  );
 
   const {
     register,
@@ -106,7 +103,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ token }) => {
 
   const handleNext = async () => {
     setError(null);
-    
+
     if (activeStep === 0) {
       const isValid = await trigger(["email", "tempPassword"]);
       if (!isValid) return;
@@ -120,7 +117,9 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ token }) => {
 
   const onSubmit = async (data: FormData) => {
     setError(null);
-    
+
+    const birthDate = new Date(data.birthday!);
+
     try {
       await completeRegistration({
         variables: {
@@ -133,18 +132,17 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ token }) => {
           profileInput: {
             employeeNumber: data.employeeNumber,
             department: data.department || null,
-            fullName: data.fullName,
+            firstName: data.firstName,
+            lastName: data.lastName,
             postalCode: data.postalCode || null,
             address: data.address || null,
             phoneNumber: data.phoneNumber || null,
-            birthday: data.birthday || null,
-            notes: data.notes || null,
+            birthday: birthDate || null,
           },
         },
       });
     } catch (err) {
-      // Error is handled by onError callback
-      console.error('Registration error:', err);
+      console.error("Registration error:", err);
     }
   };
 
@@ -210,12 +208,12 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ token }) => {
                   Account Setup
                 </FormLabel>
                 <Grid container spacing={2}>
-                  <Grid size={
-                    {
-                      xs:12,
-                      sm:6
-                    }
-                  }>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      sm: 6,
+                    }}
+                  >
                     <TextField
                       margin="normal"
                       required
@@ -229,12 +227,12 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ token }) => {
                     />
                   </Grid>
 
-                  <Grid size={
-                    {
-                      xs:12,
-                      sm:6
-                    }
-                  }>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      sm: 6,
+                    }}
+                  >
                     <TextField
                       margin="normal"
                       required
@@ -256,12 +254,12 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ token }) => {
                 </FormLabel>
 
                 <Grid container spacing={2}>
-                  <Grid size={
-                    {
-                      xs:12,
-                      sm:6
-                    }
-                  }>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      sm: 6,
+                    }}
+                  >
                     <TextField
                       margin="normal"
                       required
@@ -274,12 +272,12 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ token }) => {
                       {...register("employeeNumber")}
                     />
                   </Grid>
-                  <Grid size={
-                    {
-                      xs:12,
-                      sm:6
-                    }
-                  }>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      sm: 6,
+                    }}
+                  >
                     <TextField
                       margin="normal"
                       fullWidth
@@ -290,41 +288,68 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ token }) => {
                     />
                   </Grid>
                 </Grid>
+              </FormControl>
+            </Grid>
 
+            <Grid container spacing={2}>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 6,
+                }}
+              >
                 <TextField
                   margin="normal"
                   required
                   fullWidth
-                  label="Full Name"
-                  id="fullName"
-                  error={!!errors.fullName}
-                  helperText={errors.fullName?.message}
-                  {...register("fullName")}
+                  label="First Name"
+                  id="firstName"
+                  error={!!errors.firstName}
+                  helperText={errors.firstName?.message}
+                  {...register("firstName")}
                 />
-              </FormControl>
+              </Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 6,
+                }}
+              >
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  label="Last Name"
+                  id="lastName"
+                  error={!!errors.lastName}
+                  helperText={errors.lastName?.message}
+                  {...register("lastName")}
+                />
+              </Grid>
             </Grid>
 
             <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid size={
-                {
-                  xs:12,
-                  sm:6
-                }
-              }>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 6,
+                }}
+              >
                 <TextField
                   fullWidth
                   label="Postal Code"
                   id="postalCode"
                   placeholder="e.g., 100-0001"
                   {...register("postalCode")}
+                  inputMode="numeric"
                 />
               </Grid>
-              <Grid size={
-                {
-                  xs:12,
-                  sm:6
-                }
-              }>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 6,
+                }}
+              >
                 <TextField
                   fullWidth
                   label="Phone Number"
@@ -351,34 +376,33 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ token }) => {
               label="Birthday"
               id="birthday"
               type="date"
+              
               InputLabelProps={{ shrink: true }}
               {...register("birthday")}
             />
 
-            <TextField
-              margin="normal"
-              fullWidth
-              label="Notes"
-              id="notes"
-              placeholder="Additional information..."
-              multiline
-              rows={2}
-              {...register("notes")}
-            />
+          
           </Box>
         );
       case 2:
         return (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
+          <Box sx={{ textAlign: "center", py: 4 }}>
             <Typography variant="h4" gutterBottom color="primary">
               🎉 Registration Complete!
             </Typography>
             <Typography variant="body1" sx={{ mb: 2 }}>
-              Thank you for registering. Your account has been created successfully.
+              Thank you for registering. Your account has been created
+              successfully.
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Redirecting to dashboard...
             </Typography>
+            <Button
+            onClick={()=>navigate('/login')}
+            variant="contained"
+            >
+              Login
+            </Button>
           </Box>
         );
       default:

@@ -1,18 +1,17 @@
+import { Service } from "typedi";
 import { prisma } from "../config/prisma";
-import { Role } from "../entities";
 import { ValidationError } from "../errors";
-import { hashPassword, verifyPassword } from "../utils/auth/auth";
 import { InvitationInput } from "../inputs/invitation.input";
 import { ProfileInput } from "../inputs/profile.input";
 import { RegisterInput } from "../inputs/register.input";
-import { Service } from "typedi";
+import { hashPassword, verifyPassword } from "../utils/auth/auth";
 
 @Service()
 export class AuthService {
   async login(email: string, password: string) {
     const user = await prisma.user.findUnique({ where: { email } });
 
-    if (!user) throw new ValidationError("Invalid email or password");
+    if (!user) throw new ValidationError("Invalid email or password", "email");
 
     const valid = await verifyPassword(password, user.password);
 
@@ -42,10 +41,9 @@ export class AuthService {
         email: registerInput.email,
         password: hashedPassword,
         role: invitation.role,
-        profile: { create: profileInput },
-        companies: { create: { companyId: invitation.companyId } },
+        profile: { create: profileInput }
       },
-      include: { profile: true, companies: { include: { company: true } } },
+      include: { profile: true },
     });
 
     await prisma.invitation.update({

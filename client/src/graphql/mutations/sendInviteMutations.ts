@@ -13,3 +13,13 @@ export const SEND_INVITE_USER_MUTATION = gql`
     }
   }
 `;
+
+
+export const SEND_INVITE_TO_ADMIN_MUTATION = gql`
+  mutation SendInvitationToSystemAdmin($input: SendInvitationInput!) {
+  sendInvitationToSystemAdmin(input: $input) {
+    success
+    message
+  }
+}
+`;

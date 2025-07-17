@@ -16,6 +16,8 @@ import session from "express-session";
 import redisClient from "./utils/redisClient";
 import connectRedis from "connect-redis";
 import { sendEmail } from "./utils/email";
+import { InvitationResolver } from "./resolvers/invitation.resolver";
+import { ProfileResolver } from "./resolvers/profile.resolver";
 
 const RedisStore = connectRedis(session);
 
@@ -27,7 +29,7 @@ async function startServer() {
     store: new RedisStore({ client: redisClient }),
     secret: process.env.SESSION_SECRET!||'asfkjsdfjweoirjiworjlkwejrewrweriwer',
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true,
     cookie: {
       httpOnly: true,
       secure: false,
@@ -59,7 +61,7 @@ async function startServer() {
   });
 
   const schema = await buildSchema({
-    resolvers: [UserResolver, CompanyResolver, AuthResolver, DashboardResolver],
+    resolvers: [UserResolver, CompanyResolver, AuthResolver,InvitationResolver,ProfileResolver, DashboardResolver],
     validate: false,
     globalMiddlewares: [ExceptionFilter],
     container: Container,

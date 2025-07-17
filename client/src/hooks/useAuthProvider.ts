@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import type { User } from "../types/graphql/User";
-import { loginService, logoutService, meService } from "../services/auth.service";
+import {
+  loginService,
+  logoutService,
+  meService,
+} from "../services/auth.service";
 import { client } from "../apollo/apolloClient";
 
 export const useAuthProvider = () => {
@@ -31,6 +35,28 @@ export const useAuthProvider = () => {
     await logoutService(client);
     setUser(null);
   };
+
+  useEffect(() => {
+    let isMounted = true;
+    const checkUser = async () => {
+      try {
+        const meData = await meService(client);
+        if (meData?.me?.user && isMounted) {
+          setUser(meData.me.user);
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    checkUser();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     const checkUser = async () => {

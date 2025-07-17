@@ -49,7 +49,7 @@ import { useParams } from 'react-router-dom';
 interface Company {
   id: string;
   name: string;
-  zipCode: string;
+  postalCode: string;
   address: string;
   phoneNumber: string;
   email: string;
@@ -128,7 +128,7 @@ const CompanyDetail: React.FC = () => {
         const mockCompany: Company = {
           id: companyId || '1',
           name: 'Example Corporation',
-          zipCode: '100-0001',
+          postalCode: '100-0001',
           address: 'Tokyo, Chiyoda-ku, 1-1-1',
           phoneNumber: '03-1234-5678',
           email: 'info@example.com',
@@ -361,7 +361,7 @@ const CompanyDetail: React.FC = () => {
                   Address
                 </Typography>
                 <Typography>
-                  {company.zipCode} {company.address}
+                  {company.postalCode} {company.address}
                 </Typography>
               </Box>
 

@@ -2,8 +2,6 @@ import { prisma } from "../src/prisma";
 import { hashPassword } from "../src/utils/auth/auth";
 
 async function main() {
-
-
   await prisma.user.createMany({
     data: [
       {
@@ -34,7 +32,7 @@ async function main() {
       address: "Kathmandu, Nepal",
       email: "info@example.com",
       website: "www.example.com",
-      zipCode: "44600",
+      postalCode: "446007",
       phoneNumber: "1234567890",
       establishmentDate: new Date("2020-01-01"),
       remarks: "Leading company in tech solutions",

@@ -13,7 +13,7 @@ export class CustomError extends Error {
 
 export class ValidationError extends CustomError {
   constructor(message: string, field?: string) {
-    super(message, 'VALIDATION_ERROR', 400);
+    super(message, 'VALIDATION_ERROR', 400); // Note 400 status code
     this.field = field;
   }
   field?: string;

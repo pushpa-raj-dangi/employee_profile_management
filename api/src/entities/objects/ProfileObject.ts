@@ -33,5 +33,5 @@ export class ProfileObject {
   remarks?: string;
 
   @Field()
-  zipCode!: string;
+  postalCode!: string;
 }

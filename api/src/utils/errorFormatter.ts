@@ -1,42 +1,51 @@
-import { ApolloError, ForbiddenError } from "apollo-server-express";
-import { AuthenticationError, ValidationError, NotFoundError } from "../errors";
+import { ApolloError } from "apollo-server-express";
+import { CustomError, ValidationError } from "../errors";
 
 export function formatError(error: any) {
-  const { originalError } = error;
+  const originalError = error.originalError || error;
 
-  if (originalError instanceof AuthenticationError) {
-    return new ApolloError(originalError.message, 'UNAUTHENTICATED');
+  // 1. Handle custom errors
+  if (originalError instanceof CustomError) {
+    const extensions: Record<string, any> = {
+      code: originalError.code,
+      statusCode: originalError.statusCode
+    };
+
+    // Add field information for validation errors
+    if (originalError instanceof ValidationError && originalError.field) {
+      extensions.field = originalError.field;
+    }
+
+    return new ApolloError(originalError.message, originalError.code, extensions);
   }
 
-  if (originalError instanceof ValidationError) {
-    return new ApolloError(originalError.message, 'BAD_USER_INPUT', {
-      details: originalError.message  ,
-    });
+  // 2. Handle Prisma errors (if you use Prisma)
+  if (originalError.name === 'PrismaClientKnownRequestError') {
+    return new ApolloError(
+      "Database error occurred",
+      "DATABASE_ERROR",
+      { statusCode: 500, prismaCode: originalError.code }
+    );
   }
 
-  if (originalError instanceof NotFoundError) {
-    return new ApolloError(originalError.message, 'NOT_FOUND');
-  }
-
-  if (originalError instanceof ForbiddenError) {
-    return new ApolloError(originalError.message, 'FORBIDDEN');
-  }
-
-  // Unknown or unhandled errors
-  console.error('Unexpected GraphQL error:', {
+  // 3. Log unexpected errors for debugging
+  console.error("Unexpected GraphQL error:", {
     message: error.message,
     path: error.path,
     stack: error.stack,
     extensions: error.extensions,
+    originalError: originalError,
   });
 
-  if (process.env.NODE_ENV === 'production') {
-    return new ApolloError('Internal server error', 'INTERNAL_SERVER_ERROR');
+  // 4. Return sanitized error in production
+  if (process.env.NODE_ENV === "production") {
+    return new ApolloError(
+      "Internal server error", 
+      "INTERNAL_SERVER_ERROR",
+      { statusCode: 500 }
+    );
   }
 
- return new ApolloError(error.message, error.code || 'INTERNAL_ERROR', {
-    path: error.path,
-    stacktrace: error.stack?.split('\n'),
-    ...error.extensions, // spread extensions directly here
-  });
+  // 5. Return detailed error in development
+  return error;
 }

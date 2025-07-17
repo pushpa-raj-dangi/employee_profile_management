@@ -6,7 +6,7 @@ export class CompanyInput {
   name!: string;
 
   @Field()
-  zipCode!: string;
+  postalCode!: string;
 
   @Field()
   address!: string;

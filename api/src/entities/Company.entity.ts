@@ -10,7 +10,7 @@ export class Company {
   name!: string;
 
   @Field()
-  zipCode!: string;
+  postalCode!: string;
 
   @Field()
   address!: string;

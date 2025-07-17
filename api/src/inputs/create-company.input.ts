@@ -5,7 +5,7 @@ import { InputType, Field } from "type-graphql";
 export class CreateCompanyInput {
   @Length(5, 255) 
   @Field() name!: string;
-  @Field() zipCode!: string;
+  @Field() postalCode!: string;
   @Field() address!: string;
   @Field() phoneNumber!: string;
   @IsEmail()

@@ -1,24 +1,33 @@
-import { ObjectType, Field } from "type-graphql";
-import { BaseResponse } from "./BaseResponse";
-
+import { Field, ObjectType } from "type-graphql";
 
 @ObjectType()
-export class TokenValidationResponse extends BaseResponse {
-    @Field()
-    isValid: boolean;
+export class TokenValidationResponse {
+  @Field()
+  success: boolean;
 
-    @Field({ nullable: true })
-    errorType?: string;
+  @Field()
+  isValid: boolean;
 
-    constructor(
-        success: boolean,
-        isValid: boolean,
-        message?: string,
-        code?: string,
-        errorType?: string
-    ) {
-        super(success, message, code);
-        this.isValid = isValid;
-        this.errorType = errorType;
-    }
+  @Field()
+  message: string;
+
+  @Field({ nullable: true })
+  code?: number;
+
+  @Field({ nullable: true })
+  errorKey?: string;
+
+  constructor(
+    success: boolean,
+    isValid: boolean,
+    message: string,
+    code?: number,
+    errorKey?: string
+  ) {
+    this.success = success;
+    this.isValid = isValid;
+    this.message = message;
+    this.code = code;
+    this.errorKey = errorKey;
+  }
 }

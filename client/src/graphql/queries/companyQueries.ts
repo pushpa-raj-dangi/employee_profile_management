@@ -15,7 +15,7 @@ export const GET_COMPANIES_FULL = gql`
     companies {
       id
       name
-      zipCode
+      postalCode
       address
       phoneNumber
       email

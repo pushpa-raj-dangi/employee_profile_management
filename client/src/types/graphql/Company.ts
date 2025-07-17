@@ -7,7 +7,7 @@ export interface Company{
 export interface CompanyDTO {
   id: string;
   name: string;
-  zipCode: string;
+  postalCode: string;
   address: string;
   phoneNumber: string;
   email: string;

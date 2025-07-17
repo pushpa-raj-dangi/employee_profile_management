@@ -6,9 +6,22 @@ import { RegisterInput } from "../inputs/register.input";
 import { ProfileInput } from "../inputs/profile.input";
 import { hash } from "bcrypt";
 import { CustomContext } from "../types";
+import { InvitationResponse, SendInvitationInput } from "../inputs/send-invitation.input";
+import { AuthenticationError } from "../errors";
+import { Inject, Service } from "typedi";
+import { InvitationService } from "../services/invitation.service";
+import { TokenValidationResponse } from "../responses/TokenValidationResponse";
+import bcrypt from 'bcrypt';
 
+@Service()
 @Resolver(Invitation)
 export class InvitationResolver {
+
+  constructor(
+     @Inject(() => InvitationService) private readonly invitationService:InvitationService
+   ) {}
+ 
+
   @Authorized([Role.SYSTEM_ADMIN, Role.MANAGER])
   @Query(() => [Invitation])
   async listInvitations(@Ctx() ctx: CustomContext) {
@@ -134,4 +147,71 @@ export class InvitationResolver {
       },
     });
   }
+
+    @Authorized([Role.SYSTEM_ADMIN, Role.MANAGER])
+    @Mutation(() => Invitation)
+    async sendInvitation(
+      @Ctx() ctx: CustomContext,
+      @Arg("input") input: SendInvitationInput
+    ) {
+      if (!ctx.req?.session.id || !ctx.req?.session.role) {
+        throw new AuthenticationError("Authentication required");
+      }
+
+      return await this.invitationService.sendInvitation(
+        ctx.req.session.userId,
+        ctx.req.session.role,
+        input
+      );
+    }
+  
+  @Mutation(() => InvitationResponse)
+  async sendInvitationToSystemAdmin(
+    @Ctx() ctx: CustomContext,
+    @Arg("input") input: SendInvitationInput
+  ): Promise<InvitationResponse> {
+  
+      const result = await this.invitationService.sendInvitationToSystemAdmin(
+        ctx.req.session.userId,
+        ctx.req.session.role,
+        input
+      );
+  
+      return {
+        success: true,
+        message: "Invitation sent successfully",
+      };
+    
+  }
+
+
+
+   @Mutation(() => TokenValidationResponse)
+  async validateTempPassword(
+    @Arg("token") token: string,
+    @Arg("password") password: string
+  ): Promise<TokenValidationResponse> {
+    try {
+      const invitation = await prisma.invitation.findUnique({
+        where: { token },
+      });
+
+      if (!invitation) {
+        return new TokenValidationResponse(false, false, "Invalid token");
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, invitation.tempPassword);
+
+      if (!isPasswordValid) {
+        return new TokenValidationResponse(false, false, "Incorrect temporary password");
+      }
+
+      return new TokenValidationResponse(true, true, "Password is valid");
+    } catch (err) {
+      console.error(err);
+      return new TokenValidationResponse(false, false, "Something went wrong");
+    }
+  }
+  
+  
 }

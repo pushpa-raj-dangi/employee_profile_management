@@ -1,17 +1,16 @@
-import { Arg, Ctx, Mutation, Query, Resolver } from "type-graphql";
-import { InvitationInput, ProfileInput } from "../inputs";
-import { prisma } from "../config/prisma";
-import { AuthService } from "../services/auth.service";
+import { Arg, Authorized, Ctx, Mutation, Query, Resolver } from "type-graphql";
 import { Inject, Service } from "typedi";
-import { CustomContext } from "../types";
-import { RESPONSE_CODES } from "../responses/RESPONSE_CODES";
-import { MutationResponse } from "../responses/MutationResponse";
-import { TokenValidationResponse } from "../responses/TokenValidationResponse";
-import { BaseResponse } from "../responses/BaseResponse";
-import { ResponseFactory } from "../responses/ResponseFactory";
-import { LoginResponse } from "../responses/LoginResponse";
-import { Role, User } from "../entities";
+import { prisma } from "../config/prisma";
+import { User } from "../entities";
+import { InvitationInput, ProfileInput } from "../inputs";
 import { RegisterInput } from "../inputs/register.input";
+import { BaseResponse } from "../responses/BaseResponse";
+import { LoginResponse } from "../responses/LoginResponse";
+import { MutationResponse } from "../responses/MutationResponse";
+import { RESPONSE_CODES } from "../responses/RESPONSE_CODES";
+import { ResponseFactory } from "../responses/ResponseFactory";
+import { AuthService } from "../services/auth.service";
+import { CustomContext } from "../types";
 import { mapRole } from "../utils/mapping/mapRole";
 
 @Service()
@@ -27,26 +26,17 @@ export class AuthResolver {
     @Arg("password") password: string,
     @Ctx() ctx: CustomContext
   ): Promise<LoginResponse> {
-    try {
-      const { user } = await this.authService.login(email, password);
+    const { user } = await this.authService.login(email, password);
 
-      ctx.req.session.userId = user.id;
-      ctx.req.session.role = user.role;
+    ctx.req.session.userId = user.id;
+    ctx.req.session.role = user.role;
 
-      return new LoginResponse(
-        true,
-        "Login successful",
-        RESPONSE_CODES.SUCCESS,
-        user as User
-      );
-    } catch (error: unknown) {
-      console.log("ok",error)
-      return new LoginResponse(
-        false,
-        (error as any)?.message || "Login failed",
-        RESPONSE_CODES.UNAUTHORIZED
-      );
-    }
+    return new LoginResponse(
+      true,
+      "Login successful",
+      RESPONSE_CODES.SUCCESS,
+      user as User
+    );
   }
 
   @Mutation(() => MutationResponse)
@@ -71,6 +61,7 @@ export class AuthResolver {
     });
   }
 
+  @Authorized()
   @Query(() => LoginResponse)
   async me(@Ctx() ctx: CustomContext): Promise<LoginResponse> {
     if (!ctx.req.session.userId) {
@@ -91,7 +82,6 @@ export class AuthResolver {
           RESPONSE_CODES.NOT_FOUND
         );
       }
-
 
       const userFromDb = {
         ...user,
@@ -162,61 +152,6 @@ export class AuthResolver {
     }
   }
 
-  @Query(() => TokenValidationResponse)
-  async isTokenValid(
-    @Arg("token") token: string
-  ): Promise<TokenValidationResponse> {
-    try {
-      const invitation = await prisma.invitation.findUnique({
-        where: { token },
-      });
-
-      if (!invitation) {
-        return new TokenValidationResponse(
-          false,
-          false,
-          "Invalid invitation token",
-          RESPONSE_CODES.INVALID_TOKEN,
-          "INVALID_TOKEN"
-        );
-      }
-
-      if (invitation.status !== "PENDING") {
-        return new TokenValidationResponse(
-          false,
-          false,
-          "Invitation already used or cancelled",
-          RESPONSE_CODES.INVITATION_ALREADY_USED,
-          "ALREADY_USED"
-        );
-      }
-
-      if (invitation.expiresAt < new Date()) {
-        return new TokenValidationResponse(
-          false,
-          false,
-          "Invitation has expired",
-          RESPONSE_CODES.INVITATION_EXPIRED,
-          "EXPIRED"
-        );
-      }
-
-      return new TokenValidationResponse(
-        true,
-        true,
-        "Token is valid",
-        RESPONSE_CODES.SUCCESS
-      );
-    } catch (error) {
-      return new TokenValidationResponse(
-        false,
-        false,
-        "Failed to validate token",
-        RESPONSE_CODES.ERROR,
-        "VALIDATION_ERROR"
-      );
-    }
-  }
 
   @Query(() => BaseResponse)
   async validateTokenSimple(

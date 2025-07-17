@@ -1,4 +1,4 @@
-import { InputType, Field } from 'type-graphql';
+import { InputType, Field, ObjectType } from 'type-graphql';
 import { Role } from '../entities';
 
 @InputType()
@@ -10,6 +10,16 @@ export class SendInvitationInput {
   @Field(() => Role) 
   role!: Role;
 
+  @Field({ nullable: true })
+  companyId?: string;
+}
+
+
+@ObjectType()
+export class InvitationResponse {
   @Field()
-  companyId!: string;
+  success: boolean;
+
+  @Field({ nullable: true })
+  message?: string;
 }

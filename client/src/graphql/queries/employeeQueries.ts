@@ -17,3 +17,21 @@ export const LIST_EMPLOYEES = gql`
     }
   }
 `;
+
+export const GET_PROFILE_QUERY = gql`
+  query GetProfile($userId: String!) {
+    getProfile(userId: $userId) {
+      id
+      firstName
+      lastName
+      address
+      birthday
+      phoneNumber
+      profileImage
+      department
+      employeeNumber
+      remarks
+      postalCode
+    }
+  }
+`;

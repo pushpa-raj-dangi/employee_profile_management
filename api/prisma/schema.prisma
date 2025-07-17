@@ -39,7 +39,7 @@ model Profile {
   department     String   @db.VarChar(255)
   firstName      String   @db.VarChar(255)
   lastName       String   @db.VarChar(255)
-  zipCode        String   @db.VarChar(10)
+  postalCode     String   @db.VarChar(10)
   address        String   @db.VarChar(255)
   phoneNumber    String   @db.VarChar(255)
   birthday       DateTime
@@ -54,7 +54,7 @@ model Profile {
 model Company {
   id                String        @id @default(uuid())
   name              String        @unique @db.VarChar(255)
-  zipCode           String        @db.VarChar(10)
+  postalCode           String        @db.VarChar(10)
   address           String        @db.VarChar(255)
   phoneNumber       String        @db.VarChar(255)
   email             String        @db.VarChar(255)
@@ -90,8 +90,8 @@ model Invitation {
   invitedById   String
   invitedUser   User?            @relation("receivedInvitations", fields: [invitedUserId], references: [id])
   invitedUserId String?
-  company       Company          @relation(fields: [companyId], references: [id])
-  companyId     String
+  company   Company?         @relation(fields: [companyId], references: [id])
+  companyId String?
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
   tempPassword  String           @default("") @db.VarChar(255)

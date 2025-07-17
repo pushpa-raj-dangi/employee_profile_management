@@ -11,8 +11,7 @@ export const LOGIN_MUTATION = gql`
   }
 `;
 
-
-export const COMPLETE_REGISTRATION_MUTATION = gql`
+export const COMPLETE_REGISTRATION = gql`
   mutation CompleteRegistration(
     $token: String!
     $registerInput: RegisterInput!
@@ -23,19 +22,15 @@ export const COMPLETE_REGISTRATION_MUTATION = gql`
       registerInput: $registerInput
       profileInput: $profileInput
     ) {
-      token
-      user {
-        id
-        email
-        role
-        profile {
-          firstName
-          lastName
-        }
-      }
+      success
+      message
+      code
+      affectedRows
+      insertedId
     }
   }
 `;
+
 
 export const LOGOUT_MUTATION = gql`
   mutation Logout {
@@ -47,8 +42,3 @@ export const LOGOUT_MUTATION = gql`
   }
 `;
 
-export const IS_TOKEN_VALID = gql`
-  mutation IsTokenValid($token: String!) {
-    isTokenValid(token: $token)
-  }
-`;

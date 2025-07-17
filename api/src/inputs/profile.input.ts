@@ -3,9 +3,9 @@ import { InputType, Field } from 'type-graphql';
 
 @InputType()
 export class ProfileInput {
-  @Field()
-  id!: string;
-  
+  @Field({ nullable: true }) 
+  id?: string;
+
   @Field()
   employeeNumber!: string;
 
@@ -22,7 +22,7 @@ export class ProfileInput {
 
   @Field()
   @Length(4,4)
-  zipCode!: string;
+  postalCode!: string;
 
   @Field()
   address!: string;
