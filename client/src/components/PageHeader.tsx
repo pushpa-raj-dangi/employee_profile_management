@@ -10,6 +10,7 @@ type PageHeaderProps = {
   buttonText?: string;
   onButtonClick?: () => void;
   allowedRoles?: Role[]; 
+  viewButton?: boolean;
 };
 
 const PageHeader = ({
@@ -17,6 +18,7 @@ const PageHeader = ({
   subtitle,
   buttonText,
   onButtonClick,
+  viewButton=true,
   allowedRoles = ["GENERAL_EMPLOYEE", "MANAGER", "SYSTEM_ADMIN"],
 }: PageHeaderProps) => {
   const { user } = useAuth();
@@ -40,7 +42,7 @@ const PageHeader = ({
         </Typography>
       </Box>
 
-      {canShowButton && (
+      {(canShowButton && viewButton) && (
         <Box>
           <Button
             onClick={onButtonClick}

@@ -14,6 +14,7 @@ async function main() {
         email: "admin@gmail.com",
         password: await hashPassword("Test@123"),
         role: "MANAGER",
+        
       },
       {
         id: "emp-id-123",

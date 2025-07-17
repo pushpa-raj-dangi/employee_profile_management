@@ -32,7 +32,7 @@ async function startServer() {
         ttl: 86400 * 7,
       }),
       secret:
-        process.env.SESSION_SECRET! || "asfkjsdfjweoirjiworjlkwejrewrweriwer",
+        process.env.SESSION_SECRET!,
       resave: false,
       saveUninitialized: false,
       cookie: {
@@ -43,9 +43,14 @@ async function startServer() {
       },
     })
   );
+
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+  : [];
+
   app.use(
     cors({
-      origin: ["http://localhost:4200", "https://studio.apollographql.com"],
+      origin: allowedOrigins,
       credentials: true,
     })
   );

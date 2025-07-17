@@ -3,6 +3,7 @@ import type { Role } from "../../utils/permissions";
 export interface InvitedBy {
   id: string;
   fullName: string;
+  email:string
 }
 
 export interface InvitationResponse {

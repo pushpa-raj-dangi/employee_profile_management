@@ -22,6 +22,7 @@ import { useMutation, useQuery } from "@apollo/client";
 import type { InvitationResponse } from "../types/graphql/Invitation";
 import { useSnackbar } from "../hooks/useSnackbar";
 import { CANCEL_INVITATION } from "../graphql/mutations/invitationMutations";
+import StatusChip from "../components/StatusChip";
 
 const Invitation = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -121,9 +122,14 @@ const Invitation = () => {
                         </Typography>
                       </TableCell>
                       <TableCell>{invitation.role || "-"}</TableCell>
-                      <TableCell>{invitation.status || "-"}</TableCell>
                       <TableCell>
-                        {invitation.invitedBy?.fullName || "-"}
+
+                        <StatusChip
+                          status={invitation.status as "PENDING" | "COMPLETED" | "CANCELLED"}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {invitation.invitedBy?.email || "-"}
                       </TableCell>
                       {invitation.status === "PENDING" ? (
                         <TableCell>

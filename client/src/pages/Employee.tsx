@@ -102,6 +102,8 @@ const Employee: FC = () => {
         subtitle="Manage employee information and settings"
         buttonText="Add New Employee"
         onButtonClick={() => setOpen(true)}
+        viewButton={false}
+        
       />
       <Box
         sx={{ mb: 2, p: 2, backgroundColor: "#f5f5f5", borderRadius: "8px" }}
