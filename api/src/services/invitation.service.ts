@@ -4,6 +4,7 @@ import { InvitationStatus } from "../entities/invitation.entity";
 import { Role } from "../entities/user.entity";
 import { AuthorizationError, ValidationError } from "../errors";
 import { SendInvitationInput } from "../inputs/send-invitation.input";
+import { InvitationItemResponse } from "../responses/Invitation";
 import { generateToken, hashPassword } from "../utils/auth/auth";
 import { EmailService } from "./email.service";
 
@@ -14,6 +15,97 @@ export class InvitationService {
     @Inject(() => EmailService) private emailService: EmailService
   ) {}
 
+
+  async getInvitations(currentUserId:string,currentUserRole:string):Promise<InvitationItemResponse[]>
+  {
+    if (currentUserRole === Role.SYSTEM_ADMIN) {
+      const invitations= await prisma.invitation.findMany({
+        include: {
+          company: true,
+          invitedBy:{
+            include:{
+              profile:{
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              }
+            }
+          }
+        },
+      });
+      console.log("System invitations:", invitations);
+      const mappedInvitations: InvitationItemResponse[] = invitations.map(invitation => ({
+      id: invitation.id,
+      email: invitation.email,
+      token: invitation.token,
+      status: invitation.status as InvitationStatus,
+      role: invitation.role as Role,
+      invitedBy: invitation.invitedBy
+        ? {
+            id: invitation.invitedBy.id,
+            fullName:
+              (invitation.invitedBy.profile?.firstName ?? '') +
+              ' ' +
+              (invitation.invitedBy.profile?.lastName ?? ''),
+            role: invitation.invitedBy.role as Role,
+          }
+        : undefined,
+    }));
+
+      return mappedInvitations;
+    }
+    if (currentUserRole === Role.MANAGER) {
+      const userCompanies = await prisma.companyUser.findMany({
+        where: { userId: currentUserId },
+        select: { companyId: true },
+
+      });
+
+      const invitations =  await prisma.invitation.findMany({
+        where: {
+          companyId: {
+            in: userCompanies.map((c) => c.companyId),
+          },
+        },
+        include: {
+          company: true,
+          invitedBy: {
+            include: {
+              profile: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const mappedInvitations:InvitationItemResponse[] = invitations.map(invitation => ({
+        id: invitation.id,
+        email: invitation.email,
+        token: invitation.token,
+        status: invitation.status as InvitationStatus,
+        role: invitation.role as Role,
+        company: invitation.company,
+         invitedBy: invitation.invitedBy
+        ? {
+            id: invitation.invitedBy.id,
+            fullName:
+              (invitation.invitedBy.profile?.firstName ?? '') +
+              ' ' +
+              (invitation.invitedBy.profile?.lastName ?? ''),
+            role: invitation.invitedBy.role as Role,
+          }
+        : undefined,
+      }));
+      return mappedInvitations;
+    }
+    
+    
+  }
 
   async sendInvitation(
     invitedById: string,

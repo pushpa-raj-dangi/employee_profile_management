@@ -11,17 +11,24 @@ import { CompanyDTO } from "../entities/DTOS/company/companyDto";
 @Service()
 export class CompanyService {
   async getCompanies(ctx: CustomContext): Promise<CompanyDTO[]> {
-    const companies = await prisma.company.findMany({
-      include: { users: true },
-    });
-
     if (isSystemAdmin(ctx)) {
+      const companies = await prisma.company.findMany({
+        include: { users: true },
+      });
+      return companies as CompanyDTO[];
+    } else {
+      const companies = await prisma.company.findMany({
+        where: {
+          users: {
+            some: {
+              userId: ctx.req.session.userId,
+            },
+          },
+        },
+        include: { users: true },
+      });
       return companies as CompanyDTO[];
     }
-
-    return companies.filter((company) =>
-      company.users.some((user) => user.id === ctx.req.session.userId)
-    ) as CompanyDTO[];
   }
 
   async getCompanyById(id: string, ctx: CustomContext) {
@@ -56,7 +63,6 @@ export class CompanyService {
   }
 
   async updateCompany(
-    id: string,
     input: UpdateCompanyInput,
     ctx: CustomContext
   ) {

@@ -16,26 +16,23 @@ import React, { useState } from "react";
 import PageHeader from "../components/PageHeader";
 import PageSubHeader from "../components/PageSubHeader";
 import UserInvitationDialog from "../components/UserInvitationDialog";
+import type { InvitationResponse } from "../types/graphql/invitation";
+import { LIST_INVITATIONS } from "../graphql/queries/invitationQueries";
+import { useQuery } from "@apollo/client";
 
 const Invitation = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const companies = [
-    {
-      email: "Demo Corporation",
-      role: "Admin",
-      status: "PENDING",
-      invitedBy: "John Doe",
-      date: "2023-10-01",
-    },
-    {
-      email: "contact@techsolutions.com",
-      role: "User",
-      status: "ACCEPTED",
-      invitedBy: "Jane Smith",
-      date: "2023-09-15",
-    },
-  ];
+  const { loading, error, data } = useQuery<{
+    listInvitations: InvitationResponse[];
+  }>(LIST_INVITATIONS);
+
+  if (loading) return <p>Loading invitations...</p>;
+  if (error) return <p>Error loading invitations: {error.message}</p>;
+
+  if (!data || data.listInvitations.length === 0) {
+    return <p>No invitations found.</p>;
+  }
 
   return (
     <Box>
@@ -63,23 +60,21 @@ const Invitation = () => {
                   <TableCell sx={{ fontWeight: "bold" }}>Role</TableCell>
                   <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
                   <TableCell sx={{ fontWeight: "bold" }}>Invited By</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Date</TableCell>
                   <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {companies.map((company, index) => (
-                  <React.Fragment key={index}>
+                {data.listInvitations.map((invitation) => (
+                  <React.Fragment key={invitation.id}>
                     <TableRow hover>
                       <TableCell>
                         <Typography fontWeight="bold">
-                          {company.email}
+                          {invitation.email}
                         </Typography>
                       </TableCell>
-                      <TableCell>{company.role || "-"}</TableCell>
-                      <TableCell>{company.status || "-"}</TableCell>
-                      <TableCell>{company.invitedBy || "-"}</TableCell>
-                      <TableCell>{company.date || "-"}</TableCell>
+                      <TableCell>{invitation.role || "-"}</TableCell>
+                      <TableCell>{invitation.status || "-"}</TableCell>
+                      <TableCell>{invitation.invitedBy?.fullName || "-"}</TableCell>
                       <TableCell>
                         <Button
                           color="error"
@@ -94,9 +89,9 @@ const Invitation = () => {
           </TableContainer>
         </Paper>
       </Box>
-      <UserInvitationDialog 
-        open={dialogOpen} 
-        onClose={() => setDialogOpen(false)} 
+      <UserInvitationDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
       />
     </Box>
   );

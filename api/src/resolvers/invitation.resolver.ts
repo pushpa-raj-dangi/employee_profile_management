@@ -6,54 +6,32 @@ import { RegisterInput } from "../inputs/register.input";
 import { ProfileInput } from "../inputs/profile.input";
 import { hash } from "bcrypt";
 import { CustomContext } from "../types";
-import { InvitationResponse, SendInvitationInput } from "../inputs/send-invitation.input";
+
 import { AuthenticationError } from "../errors";
 import { Inject, Service } from "typedi";
 import { InvitationService } from "../services/invitation.service";
 import { TokenValidationResponse } from "../responses/TokenValidationResponse";
-import bcrypt from 'bcrypt';
+import bcrypt from "bcrypt";
+import { InvitationResponse, SendInvitationInput } from "../inputs/send-invitation.input";
+import { InvitationItemResponse } from "../responses/Invitation";
 
 @Service()
 @Resolver(Invitation)
 export class InvitationResolver {
-
   constructor(
-     @Inject(() => InvitationService) private readonly invitationService:InvitationService
-   ) {}
- 
+    @Inject(() => InvitationService)
+    private readonly invitationService: InvitationService
+  ) {}
 
   @Authorized([Role.SYSTEM_ADMIN, Role.MANAGER])
-  @Query(() => [Invitation])
+  @Query(() => [InvitationItemResponse])
   async listInvitations(@Ctx() ctx: CustomContext) {
-    if (ctx.req.session.role === Role.SYSTEM_ADMIN) {
-      return prisma.invitation.findMany({
-        include: {
-          invitedBy: true,
-          invitedUser: true,
-          company: true,
-        },
-      });
-    } else {
-      // For managers, only show invitations they sent to their companies
-      const companyUsers = await prisma.companyUser.findMany({
-        where: { userId: ctx.req.session.userId },
-        select: { companyId: true },
-      });
+    console.log("Fetching invitations for user:", ctx.req.session.userId);
+    return await this.invitationService.getInvitations(
+      ctx.req.session.userId,
+      ctx.req.session.role
+    );
 
-      const companyIds = companyUsers.map((cu) => cu.companyId);
-
-      return prisma.invitation.findMany({
-        where: {
-          invitedById: ctx.req.session.userId,
-          companyId: { in: companyIds },
-        },
-        include: {
-          invitedBy: true,
-          invitedUser: true,
-          company: true,
-        },
-      });
-    }
   }
 
   @Mutation(() => User)
@@ -148,45 +126,41 @@ export class InvitationResolver {
     });
   }
 
-    @Authorized([Role.SYSTEM_ADMIN, Role.MANAGER])
-    @Mutation(() => Invitation)
-    async sendInvitation(
-      @Ctx() ctx: CustomContext,
-      @Arg("input") input: SendInvitationInput
-    ) {
-      if (!ctx.req?.session.id || !ctx.req?.session.role) {
-        throw new AuthenticationError("Authentication required");
-      }
-
-      return await this.invitationService.sendInvitation(
-        ctx.req.session.userId,
-        ctx.req.session.role,
-        input
-      );
+  @Authorized([Role.SYSTEM_ADMIN, Role.MANAGER])
+  @Mutation(() => Invitation)
+  async sendInvitation(
+    @Ctx() ctx: CustomContext,
+    @Arg("input") input: SendInvitationInput
+  ) {
+    if (!ctx.req?.session.id || !ctx.req?.session.role) {
+      throw new AuthenticationError("Authentication required");
     }
-  
+
+    return await this.invitationService.sendInvitation(
+      ctx.req.session.userId,
+      ctx.req.session.role,
+      input
+    );
+  }
+
   @Mutation(() => InvitationResponse)
   async sendInvitationToSystemAdmin(
     @Ctx() ctx: CustomContext,
     @Arg("input") input: SendInvitationInput
   ): Promise<InvitationResponse> {
-  
-      const result = await this.invitationService.sendInvitationToSystemAdmin(
-        ctx.req.session.userId,
-        ctx.req.session.role,
-        input
-      );
-  
-      return {
-        success: true,
-        message: "Invitation sent successfully",
-      };
-    
+    const result = await this.invitationService.sendInvitationToSystemAdmin(
+      ctx.req.session.userId,
+      ctx.req.session.role,
+      input
+    );
+
+    return {
+      success: true,
+      message: "Invitation sent successfully",
+    };
   }
 
-
-
-   @Mutation(() => TokenValidationResponse)
+  @Mutation(() => TokenValidationResponse)
   async validateTempPassword(
     @Arg("token") token: string,
     @Arg("password") password: string
@@ -200,10 +174,17 @@ export class InvitationResolver {
         return new TokenValidationResponse(false, false, "Invalid token");
       }
 
-      const isPasswordValid = await bcrypt.compare(password, invitation.tempPassword);
+      const isPasswordValid = await bcrypt.compare(
+        password,
+        invitation.tempPassword
+      );
 
       if (!isPasswordValid) {
-        return new TokenValidationResponse(false, false, "Incorrect temporary password");
+        return new TokenValidationResponse(
+          false,
+          false,
+          "Incorrect temporary password"
+        );
       }
 
       return new TokenValidationResponse(true, true, "Password is valid");
@@ -212,6 +193,4 @@ export class InvitationResolver {
       return new TokenValidationResponse(false, false, "Something went wrong");
     }
   }
-  
-  
 }

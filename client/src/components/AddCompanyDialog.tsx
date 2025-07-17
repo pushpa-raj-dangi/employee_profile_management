@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import {
@@ -17,26 +16,31 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { Controller } from "react-hook-form";
 import { companySchema, type CompanyFormData } from "../schemas/company/createCompanySchema";
+import { useEffect } from "react";
 
-
-type AddCompanyDialogProps = {
+type CompanyDialogProps = {
   open: boolean;
   onClose: () => void;
   onSubmit: (data: CompanyFormData) => void;
+  defaultValues?: Partial<CompanyFormData>;
+  isEdit?: boolean;
 };
 
-const AddCompanyDialog = ({
+const CompanyDialog = ({
   open,
   onClose,
   onSubmit,
-}: AddCompanyDialogProps) => {
+  defaultValues,
+  isEdit = false,
+}: CompanyDialogProps) => {
   const {
     control,
     handleSubmit,
+    trigger,
     register,
     formState: { errors, isValid },
     reset,
-  } = useForm<CompanyFormData>({
+  } = useForm({
     resolver: zodResolver(companySchema),
     mode: "onChange",
     defaultValues: {
@@ -46,10 +50,26 @@ const AddCompanyDialog = ({
       phoneNumber: "",
       email: "",
       website: "",
-      establishmentDate: new Date(),
+      establishmentDate: undefined,
       remarks: "",
+      ...defaultValues,
     },
   });
+
+  console.log("CompanyDialog defaultValues:", defaultValues);
+
+useEffect(() => {
+  if (defaultValues) {
+    const clonedDefaults = {
+      ...defaultValues,
+      establishmentDate: defaultValues.establishmentDate
+        ? new Date(defaultValues.establishmentDate)
+        : undefined,
+    };
+    reset(clonedDefaults);
+  }
+      trigger(); 
+}, [defaultValues, reset, trigger]);
 
   const handleClose = () => {
     reset();
@@ -61,20 +81,21 @@ const AddCompanyDialog = ({
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogTitle>
           <Box display="flex" flexDirection="column">
-            <Typography variant="h6">Add New Company</Typography>
+            <Typography variant="h6">
+              {isEdit ? "Edit Company" : "Add New Company"}
+            </Typography>
             <Typography variant="subtitle2" color="textSecondary">
-              Create a new company profile
+              {isEdit ? "Update company profile" : "Create a new company profile"}
             </Typography>
           </Box>
         </DialogTitle>
         <DialogContent>
           <form onSubmit={handleSubmit(onSubmit)}>
-          
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid
                 size={{
-                  xs: 12,
-                  sm: 6,
+                  xs:12,
+                  sm:6
                 }}
               >
                 <TextField
@@ -90,8 +111,8 @@ const AddCompanyDialog = ({
 
               <Grid
                 size={{
-                  xs: 12,
-                  sm: 6,
+                  xs:12,
+                  sm:6
                 }}
               >
                 <TextField
@@ -106,8 +127,8 @@ const AddCompanyDialog = ({
               </Grid>
               <Grid
                 size={{
-                  xs: 12,
-                  sm: 6,
+                  xs:12,
+                  sm:6
                 }}
               >
                 <TextField
@@ -121,7 +142,7 @@ const AddCompanyDialog = ({
                 />
               </Grid>
 
-              <Grid size={{ sm: 12 }}>
+              <Grid size={{xs:12}}>
                 <TextField
                   {...register("address")}
                   label="Address"
@@ -137,8 +158,8 @@ const AddCompanyDialog = ({
 
               <Grid
                 size={{
-                  xs: 12,
-                  sm: 6,
+                  xs:12,
+                  sm:6
                 }}
               >
                 <TextField
@@ -154,8 +175,8 @@ const AddCompanyDialog = ({
               </Grid>
               <Grid
                 size={{
-                  xs: 12,
-                  sm: 6,
+                  xs:12,
+                  sm:6
                 }}
               >
                 <TextField
@@ -170,8 +191,8 @@ const AddCompanyDialog = ({
 
               <Grid
                 size={{
-                  xs: 12,
-                  sm: 6,
+                  xs:12,
+                  sm:6
                 }}
               >
                 <Controller
@@ -195,7 +216,7 @@ const AddCompanyDialog = ({
                 />
               </Grid>
 
-              <Grid size={{ sm: 12 }}>
+              <Grid size={{xs:12}}>
                 <TextField
                   {...register("remarks")}
                   label="Notes"
@@ -217,7 +238,7 @@ const AddCompanyDialog = ({
             variant="contained"
             disabled={!isValid}
           >
-            Create
+            {isEdit ? "Update" : "Create"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -225,4 +246,4 @@ const AddCompanyDialog = ({
   );
 };
 
-export default AddCompanyDialog;
+export default CompanyDialog;

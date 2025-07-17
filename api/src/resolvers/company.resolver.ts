@@ -19,13 +19,13 @@ import { CustomContext } from "../types";
 export class CompanyResolver {
   constructor(private readonly companyService: CompanyService) {}
 
-  @Authorized(Role.SYSTEM_ADMIN, Role.MANAGER)
+  @Authorized()
   @Query(() => [Company])
   async companies(@Ctx() ctx: CustomContext) {
     return this.companyService.getCompanies(ctx);
   }
 
-  @Authorized([Role.SYSTEM_ADMIN, Role.MANAGER])
+  @Authorized()
   @Query(() => Company)
   async company(@Arg("id", () => ID) id: string, @Ctx() ctx: CustomContext) {
     return this.companyService.getCompanyById(id, ctx);
@@ -40,10 +40,9 @@ export class CompanyResolver {
   @Mutation(() => Company)
   @Authorized([Role.SYSTEM_ADMIN, Role.MANAGER])
   async updateCompany(
-    @Arg("id", () => ID) id: string,
     @Arg("input") input: UpdateCompanyInput,
     @Ctx() ctx: CustomContext
   ) {
-    return this.companyService.updateCompany(id, input, ctx);
+    return this.companyService.updateCompany(input, ctx);
   }
 }

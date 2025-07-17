@@ -10,12 +10,13 @@ async function main() {
         role: "SYSTEM_ADMIN",
       },
       {
+        id:'admin-id-123',
         email: "admin@gmail.com",
         password: await hashPassword("Test@123"),
         role: "MANAGER",
       },
       {
-        id: "user-id-123",
+        id: "emp-id-123",
         email: "employee@gmail.com",
         password: await hashPassword("Test@123"),
         role: "GENERAL_EMPLOYEE",
@@ -40,11 +41,14 @@ async function main() {
     },
   });
 
-  await prisma.companyUser.create({
-    data: {
-      userId: "user-id-123",
+  await prisma.companyUser.createMany({
+    data: [{
+      userId: "emp-id-123",
       companyId: "company-id-123",
-    },
+    },{
+      companyId:'company-id-123',
+      userId: "admin-id-123",
+    }],
   });
 
   console.log("✅ Seeding completed.");

@@ -30,14 +30,14 @@ export class Invitation {
   @Field(() => InvitationStatus)
   status!: InvitationStatus;
 
-  @Field(() => User)
-  invitedBy!: User;
+  @Field(() => User, { nullable: true })
+  invitedBy?: User;
 
   @Field(() => User, { nullable: true })
   invitedUser?: User;
 
-  @Field(() => Company)
-  company!: Company;
+  @Field(() => Company, { nullable: true })
+  company?: Company;
 
   @Field()
   expiresAt!: Date;

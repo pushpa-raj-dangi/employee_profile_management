@@ -29,3 +29,21 @@ export const GET_COMPANIES_FULL = gql`
     }
   }
 `;
+
+
+export const GET_COMPANY_BY_ID = gql`
+  query GetCompanyById($id: ID!) {
+    company(id: $id) {
+      id
+      name
+      postalCode
+      address
+      phoneNumber
+      email
+      website
+      establishmentDate
+      remarks
+    }
+  }
+`;
+  

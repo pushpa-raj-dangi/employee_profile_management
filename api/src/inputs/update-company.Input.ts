@@ -1,19 +1,8 @@
 import { InputType, Field } from 'type-graphql';
+import { CreateCompanyInput } from './create-company.input';
 
 @InputType()
-export class UpdateCompanyInput {
+export class UpdateCompanyInput extends CreateCompanyInput {
   @Field()
   id!: string;
-
-  @Field({ nullable: true })
-  name?: string;
-
-  @Field({ nullable: true })
-  postalCode?: string;
-
-  @Field({ nullable: true })
-  address?: string;
-
-  @Field({ nullable: true })
-  phone?: string;
 }

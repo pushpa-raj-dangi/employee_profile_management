@@ -200,7 +200,11 @@ const Employee: FC = () => {
           />
         </Paper>
       </Box>
-      <AddEmployeeDialog open={open} onClose={() => setOpen(false)} />
+      {
+        open && (
+          <AddEmployeeDialog open={open} onClose={() => setOpen(false)} />
+        )
+      }
     </Box>
   );
 };

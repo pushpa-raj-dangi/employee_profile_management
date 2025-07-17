@@ -64,7 +64,7 @@ const router = createBrowserRouter([
       {
         path: "companies",
         element: (
-          <ProtectedRoute roles={[Role.SYSTEM_ADMIN, Role.MANAGER]}>
+          <ProtectedRoute>
             <Company />
           </ProtectedRoute>
         ),

@@ -45,7 +45,6 @@ const NAVIGATION: CustomNavigation = [
     segment: "companies",
     title: "Companies",
     icon: <BusinessIcon />,
-    visibleTo: [Role.SYSTEM_ADMIN, Role.MANAGER],
   },
   {
     segment: "invitations",
