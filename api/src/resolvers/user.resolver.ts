@@ -9,7 +9,7 @@ import {
 } from "type-graphql";
 import { Inject, Service } from "typedi";
 import { ProfileObject } from "../entities/objects/profileObject";
-import { PaginatedEmployees } from "../entities/paginatedEmployee.entity";
+import { PaginatedEmployees } from "../entities/paginatedemployee.entity";
 import { Role, User } from "../entities/user.entity";
 import { ProfileInput } from "../inputs/profile.input";
 import { UserService } from "../services/user.service";

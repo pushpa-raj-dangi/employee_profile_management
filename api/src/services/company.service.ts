@@ -1,7 +1,7 @@
 import { GraphQLError } from "graphql";
 import { Service } from "typedi";
 import { prisma } from "../config/prisma";
-import { CompanyDTO } from "../entities/dtos/company/companyDto";
+import { CompanyDTO } from "../entities/dtos/company/companydto";
 import { Role } from "../entities/user.entity";
 import { CreateCompanyInput } from "../inputs/create-company.input";
 import { UpdateCompanyInput } from "../inputs/update-company.Input";

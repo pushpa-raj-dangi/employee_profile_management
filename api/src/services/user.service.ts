@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client";
 import { AuthenticationError } from "apollo-server-express";
 import { Service } from "typedi";
 import { prisma } from "../config/prisma";
-import { EmployeeDTO } from "../entities/dtos/employees/employeeDto";
+import { EmployeeDTO } from "../entities/dtos/employees/employeedto";
 import { ProfileObject } from "../entities/objects/profileObject";
 import { Role } from "../entities/user.entity";
 import { AuthorizationError, NotFoundError, ValidationError } from "../errors";
@@ -166,7 +166,7 @@ export class UserService {
       if (!filterCompanyIds.length) return { data: [], totalCount: 0 };
     }
 
-    const searchFilter: Prisma.CompanyUserWhereInput = searchTerm
+    const searchFilter = searchTerm
       ? {
           OR: [
             { user: { email: { contains: searchTerm, mode: "insensitive" } } },
@@ -191,7 +191,7 @@ export class UserService {
         }
       : {};
 
-    const whereClause: Prisma.CompanyUserWhereInput = {
+    const whereClause = {
       ...(filterCompanyIds && {
         companyId: { in: filterCompanyIds },
       }),
