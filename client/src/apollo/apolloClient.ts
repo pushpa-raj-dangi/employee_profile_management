@@ -6,7 +6,7 @@ import {
 } from "@apollo/client";
 import { onError } from "@apollo/client/link/error";
 
-const apiURL = process.env.REACT_APP_API_URL || "http://localhost:4000";
+const apiURL = import.meta.env.VITE_API_URL || "https://employeeapi25.azurewebsites.net";
 
 const httpLink = createHttpLink({
   uri: `${apiURL}/graphql`,
