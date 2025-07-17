@@ -166,7 +166,7 @@ export class UserService {
       if (!filterCompanyIds.length) return { data: [], totalCount: 0 };
     }
 
-    const searchFilter = searchTerm
+    const searchFilter: Prisma.CompanyUserWhereInput = searchTerm
       ? {
           OR: [
             { user: { email: { contains: searchTerm, mode: "insensitive" } } },
@@ -191,7 +191,7 @@ export class UserService {
         }
       : {};
 
-    const whereClause = {
+    const whereClause: Prisma.CompanyUserWhereInput = {
       ...(filterCompanyIds && {
         companyId: { in: filterCompanyIds },
       }),
