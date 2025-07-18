@@ -24,25 +24,40 @@ const RedisStore = connectRedis(session);
 async function startServer() {
   const app = express();
   app.set("trust proxy", 1);
+  // app.use(
+  //   session({
+  //     store: new RedisStore({
+  //       client: redisClient,
+  //       prefix: "sess:",
+  //       ttl: 86400 * 7,
+  //     }),
+  //     secret:
+  //       process.env.SESSION_SECRET!,
+  //     resave: false,
+  //     saveUninitialized: false,
+  //     cookie: {
+  //       httpOnly: true,
+  //       secure: process.env.NODE_ENV === "production",
+  //       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+  //       sameSite: "none",
+  //     },
+  //   })
+  // );
+
+
   app.use(
-    session({
-      store: new RedisStore({
-        client: redisClient,
-        prefix: "sess:",
-        ttl: 86400 * 7,
-      }),
-      secret:
-        process.env.SESSION_SECRET!,
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-        sameSite: "none",
-      },
-    })
-  );
+  session({
+    secret: process.env.SESSION_SECRET!,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      sameSite: "none",
+    },
+  })
+);
 
   const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
