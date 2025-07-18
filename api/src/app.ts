@@ -61,6 +61,15 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
+  app.get("/test-session", (req, res) => {
+  // @ts-ignore
+      req.session.viewCount = (req.session.viewCount || 0) + 1;
+      // @ts-ignore
+      res.send(`Viewed ${req.session.viewCount} times`);
+    });
+
+
+
   app.use((err: any, req: any, res: any, next: any) => {
     if (err.code !== "EBADCSRFTOKEN") return next(err);
     // Handle session errors

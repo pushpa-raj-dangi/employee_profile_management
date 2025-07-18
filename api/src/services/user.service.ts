@@ -145,124 +145,94 @@ export class UserService {
   }
 
   async listEmployees(
-    userId: string,
-    userRole: Role,
-    searchTerm?: string,
-    skip = 0,
-    take = 20
-  ): Promise<{ data: EmployeeDTO[]; totalCount: number }> {
-    if (!userId) throw new AuthenticationError("User ID is required");
+  userId: string,
+  userRole: Role,
+  searchTerm?: string,
+  skip = 0,
+  take = 20
+): Promise<{ data: EmployeeDTO[]; totalCount: number }> {
+  if (!userId) throw new AuthenticationError("User ID is required");
 
-    let filterCompanyIds: string[] | undefined;
-
-    if (userRole === Role.MANAGER) {
-      const companies = await prisma.companyUser.findMany({
-        where: { userId },
-        select: { companyId: true },
-      });
-
-      filterCompanyIds = companies.map((c) => c.companyId);
-
-      if (!filterCompanyIds.length) return { data: [], totalCount: 0 };
+  let whereClause: Prisma.CompanyUserWhereInput = {
+    user: {
+      role: Role.GENERAL_EMPLOYEE, // Only return general employees
     }
+  };
 
-    const searchFilter: Prisma.CompanyUserWhereInput = searchTerm
-      ? {
-          OR: [
-            { user: { email: { contains: searchTerm, mode: "insensitive" } } },
-            {
-              user: {
-                profile: {
-                  firstName: { contains: searchTerm, mode: "insensitive" },
-                },
-              },
-            },
-            {
-              user: {
-                profile: {
-                  lastName: { contains: searchTerm, mode: "insensitive" },
-                },
-              },
-            },
-            {
-              company: { name: { contains: searchTerm, mode: "insensitive" } },
-            },
-          ],
-        }
-      : {};
+  // Apply company filter for MANAGERs
+  if (userRole === Role.MANAGER) {
+    const companies = await prisma.companyUser.findMany({
+      where: { userId },
+      select: { companyId: true },
+    });
 
-    const whereClause: Prisma.CompanyUserWhereInput = {
-      ...(filterCompanyIds && {
-        companyId: { in: filterCompanyIds },
-      }),
-      OR: searchTerm
-        ? [
-            { user: { email: { contains: searchTerm, mode: "insensitive" } } },
-            {
-              user: {
-                profile: {
-                  firstName: { contains: searchTerm, mode: "insensitive" },
-                },
+    const companyIds = companies.map((c) => c.companyId);
+    if (!companyIds.length) return { data: [], totalCount: 0 };
+    
+    whereClause.companyId = { in: companyIds };
+  } 
+  // SYSTEM_ADMIN can see all employees, so no additional filter needed
+
+  // Apply search filter if searchTerm exists
+  if (searchTerm) {
+    whereClause.OR = [
+      { user: { email: { contains: searchTerm, mode: "insensitive" } } },
+      { user: { profile: { firstName: { contains: searchTerm, mode: "insensitive" } } } },
+      { user: { profile: { lastName: { contains: searchTerm, mode: "insensitive" } } } },
+      { company: { name: { contains: searchTerm, mode: "insensitive" } } },
+      // Additional search fields from requirements
+      { user: { profile: { employeeNumber: { contains: searchTerm, mode: "insensitive" } } } },
+      { user: { profile: { department: { contains: searchTerm, mode: "insensitive" } } } },
+    ];
+  }
+
+  const [companyUsers, totalCount] = await Promise.all([
+    prisma.companyUser.findMany({
+      where: whereClause,
+      select: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            profile: {
+              select: {
+                firstName: true,
+                lastName: true,
+                employeeNumber: true,
+                department: true,
+                // Include other profile fields as needed
               },
-            },
-            {
-              user: {
-                profile: {
-                  lastName: { contains: searchTerm, mode: "insensitive" },
-                },
-              },
-            },
-            {
-              company: { name: { contains: searchTerm, mode: "insensitive" } },
-            },
-          ]
-        : undefined,
-      user: {
-        role: Role.GENERAL_EMPLOYEE,
-      },
-    };
-    const [companyUsers, totalCount] = await Promise.all([
-      prisma.companyUser.findMany({
-        where: whereClause,
-        select: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              profile: {
-                select: {
-                  firstName: true,
-                  lastName: true,
-                },
-              },
-            },
-          },
-          company: {
-            select: {
-              name: true,
             },
           },
         },
-        skip,
-        take,
-      }),
-      prisma.companyUser.count({ where: whereClause }),
-    ]);
+        company: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      skip,
+      take,
+    }),
+    prisma.companyUser.count({ where: whereClause }),
+  ]);
 
-    const data: EmployeeDTO[] = companyUsers.map((cu) => ({
-      id: cu.user.id,
-      email: cu.user.email,
-      profile: cu.user.profile
-        ? {
-            firstName: cu.user.profile.firstName,
-            lastName: cu.user.profile.lastName,
-          }
-        : null,
-      companyName: cu.company.name,
-    }));
+  const data: EmployeeDTO[] = companyUsers.map((cu) => ({
+    id: cu.user.id,
+    email: cu.user.email,
+    profile: cu.user.profile
+      ? {
+          firstName: cu.user.profile.firstName,
+          lastName: cu.user.profile.lastName,
+          employeeNumber: cu.user.profile.employeeNumber,
+          department: cu.user.profile.department,
+        }
+      : null,
+    companyName: cu.company.name,
+  }));
 
-    return { data, totalCount };
-  }
+  return { data, totalCount };
+}
 
   async getEmployeeById(
     userId: string,

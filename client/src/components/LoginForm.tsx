@@ -1,15 +1,14 @@
-import { useState, type FormEvent } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
 import {
+  Alert,
   Box,
-  Typography,
-  TextField,
   Button,
   Container,
   Paper,
-  Alert,
-  CircularProgress,
+  TextField,
+  Typography
 } from "@mui/material";
+import { useState, type FormEvent } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
 export const LoginForm = () => {
@@ -85,13 +84,9 @@ export const LoginForm = () => {
             fullWidth
             variant="contained"
             sx={{ mt: 3, mb: 2, py: 1.5 }}
-            disabled={loading}
+            loading={loading}
           >
-            {loading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              "Sign In"
-            )}
+            Sign In
           </Button>
         </Box>
       </Paper>
