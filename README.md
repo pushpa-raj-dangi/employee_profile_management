@@ -44,7 +44,12 @@ npm install
 # or npm install
 
 ```
-2. Run as dev:
+2. Seed Sample Data:
+```bash
+ts-node prisma/seed.ts
+
+```
+3. Run as dev:
 
 ```bash
 npm run dev 
