@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { client } from "../apollo/apolloClient";
-import { loginService, meService, logoutService } from "../services/auth.service";
+import { loginService, logoutService, meService } from "../services/auth.service";
 import type { User } from "../types/graphql/User";
 
 export const useAuthProvider = () => {
@@ -14,7 +14,7 @@ export const useAuthProvider = () => {
     
     try {
       const loginData = await loginService(client, email, password);
-      
+      console.log("Login response:", loginData);
       if (!loginData?.login?.success) {
         throw new Error(loginData?.login?.message || "Login failed");
       }
@@ -47,29 +47,29 @@ export const useAuthProvider = () => {
     }
   };
 
-  useEffect(() => {
-    let isMounted = true;
-    setLoading(true);
+  // useEffect(() => {
+  //   let isMounted = true;
+  //   setLoading(true);
     
-    const checkUser = async () => {
-      try {
-        const meData = await meService(client);
-        if (isMounted && meData?.me?.user) {
-          setUser(meData.me.user);
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
+  //   const checkUser = async () => {
+  //     try {
+  //       const meData = await meService(client);
+  //       if (isMounted && meData?.me?.user) {
+  //         setUser(meData.me.user);
+  //       }
+  //     } catch (error) {
+  //       console.error("Auth check error:", error);
+  //     } finally {
+  //       if (isMounted) setLoading(false);
+  //     }
+  //   };
 
-    checkUser();
+  //   checkUser();
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  //   return () => {
+  //     isMounted = false;
+  //   };
+  // }, []);
 
   return {
     user,
