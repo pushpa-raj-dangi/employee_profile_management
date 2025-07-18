@@ -23,7 +23,7 @@ const RedisStore = connectRedis(session);
 
 async function startServer() {
   const app = express();
-
+  app.set("trust proxy", 1);
   app.use(
     session({
       store: new RedisStore({
