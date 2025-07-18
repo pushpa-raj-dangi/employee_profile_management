@@ -31,8 +31,7 @@ async function startServer() {
         prefix: "sess:",
         ttl: 86400 * 7,
       }),
-      secret:
-        process.env.SESSION_SECRET!,
+      secret: process.env.SESSION_SECRET!,
       resave: false,
       saveUninitialized: false,
       cookie: {
@@ -44,24 +43,23 @@ async function startServer() {
     })
   );
 
-
-//   app.use(
-//   session({
-//     secret: process.env.SESSION_SECRET!,
-//     resave: false,
-//     saveUninitialized: false,
-//     cookie: {
-//       httpOnly: true,
-//       secure: process.env.NODE_ENV === "production",
-//       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-//       sameSite: "none",
-//     },
-//   })
-// );
+  //   app.use(
+  //   session({
+  //     secret: process.env.SESSION_SECRET!,
+  //     resave: false,
+  //     saveUninitialized: false,
+  //     cookie: {
+  //       httpOnly: true,
+  //       secure: process.env.NODE_ENV === "production",
+  //       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+  //       sameSite: "none",
+  //     },
+  //   })
+  // );
 
   const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
-  : [];
+    ? process.env.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim())
+    : [];
 
   app.use(
     cors({
@@ -77,13 +75,20 @@ async function startServer() {
   });
 
   app.get("/test-session", (req, res) => {
-  // @ts-ignore
-      req.session.viewCount = (req.session.viewCount || 0) + 1;
-      // @ts-ignore
-      res.send(`Viewed ${req.session.viewCount} times`);
-    });
-
-
+    // @ts-ignore
+    req.session.viewCount = (req.session.viewCount || 0) + 1;
+    // @ts-ignore
+    res.send(`Viewed ${req.session.viewCount} times`);
+  });
+  app.use((err, req, res, next) => {
+    if (err.code === "ECONNRESET" || err.code === "EREDIS") {
+      // Handle Redis errors gracefully
+      return res
+        .status(503)
+        .json({ message: "Service temporarily unavailable" });
+    }
+    next(err);
+  });
 
   app.use((err: any, req: any, res: any, next: any) => {
     if (err.code !== "EBADCSRFTOKEN") return next(err);

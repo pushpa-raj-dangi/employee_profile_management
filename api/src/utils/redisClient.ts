@@ -4,6 +4,8 @@ const redisClient = new Redis({
   host: process.env.REDIS_HOST,
   port: +(process.env.REDIS_PORT),
   password: process.env.REDIS_PASSWORD,
+  maxRetriesPerRequest: 3,
+  enableOfflineQueue: true,
 
   tls: process.env.REDIS_TLS === "true" ? {} : undefined,
 

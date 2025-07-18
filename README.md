@@ -75,3 +75,8 @@ npm run dev
 
 * Frontend `http://localhost:4200`
 * Backend `http://localhost:4000`
+
+
+## Enviroment sample file 
+```
+1. env.sample
